@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Kearns Café</title>
+
+  <!-- Makes it act like an app when added to the iPad home screen -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kearns Café">
+  <meta name="theme-color" content="#222222">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ============ SHOP PICKER ============ -->
+  <section id="picker" class="screen">
+    <h1 class="picker-title">Kearns Café</h1>
+    <p class="picker-sub">Which shop are you working at today?</p>
+    <div id="shop-buttons" class="shop-buttons"></div>
+  </section>
+
+  <!-- ============ REGISTER ============ -->
+  <section id="register" class="screen hidden">
+    <header class="topbar">
+      <button id="btn-home" class="topbar-home" aria-label="Switch shop">⌂</button>
+      <div class="topbar-brand">
+        <span id="shop-emoji" class="brand-emoji"></span>
+        <span id="shop-name" class="brand-name"></span>
+      </div>
+      <div id="order-type" class="segmented">
+        <button data-type="For Here">For Here</button>
+        <button data-type="To Go">To Go</button>
+        <button data-type="Drive-Thru">Drive-Thru</button>
+      </div>
+      <div class="topbar-right">
+        <div id="order-number" class="order-number"></div>
+        <div id="clock" class="clock"></div>
+      </div>
+    </header>
+
+    <main class="register-body">
+      <div class="menu-side">
+        <nav id="categories" class="categories"></nav>
+        <div id="items" class="items"></div>
+      </div>
+
+      <aside class="ticket">
+        <div class="ticket-head">
+          <div>
+            <div class="ticket-title">Current Order</div>
+            <div id="ticket-customer" class="ticket-customer"></div>
+          </div>
+          <button id="btn-clear" class="btn-small">Clear</button>
+        </div>
+        <ul id="lines" class="lines"></ul>
+        <div id="empty" class="empty">Tap a menu item<br>to start an order</div>
+        <div class="totals">
+          <div class="row"><span>Subtotal</span><span id="subtotal">$0.00</span></div>
+          <div class="row"><span id="tax-label">Tax</span><span id="tax">$0.00</span></div>
+          <div class="row total"><span>Total</span><span id="total">$0.00</span></div>
+        </div>
+        <button id="btn-charge" class="btn-charge" disabled>Charge $0.00</button>
+      </aside>
+    </main>
+  </section>
+
+  <!-- ============ ITEM OPTIONS POPUP ============ -->
+  <div id="item-modal" class="modal hidden">
+    <div class="sheet">
+      <div class="sheet-head">
+        <span id="im-emoji" class="sheet-emoji"></span>
+        <div>
+          <div id="im-name" class="sheet-title"></div>
+          <div id="im-base" class="sheet-sub"></div>
+        </div>
+      </div>
+      <div id="im-groups" class="groups"></div>
+      <div class="sheet-foot">
+        <div class="qty">
+          <button id="im-minus" class="qty-btn">−</button>
+          <span id="im-qty" class="qty-num">1</span>
+          <button id="im-plus" class="qty-btn">+</button>
+        </div>
+        <button id="im-cancel" class="btn-secondary">Cancel</button>
+        <button id="im-add" class="btn-primary">Add to Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CHECKOUT POPUP (Phase 1: simple) ============ -->
+  <div id="checkout-modal" class="modal hidden">
+    <div class="sheet sheet-narrow">
+      <div class="sheet-title center">Name for the order?</div>
+      <input id="co-name" class="name-input" type="text" placeholder="Type a name" autocomplete="off" autocapitalize="words">
+      <div id="co-quick" class="quick-names"></div>
+      <div class="co-total">Total: <strong id="co-total"></strong></div>
+      <div class="sheet-foot">
+        <button id="co-cancel" class="btn-secondary">Back</button>
+        <button id="co-pay" class="btn-primary">Paid ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ORDER COMPLETE ============ -->
+  <div id="done-modal" class="modal hidden">
+    <div class="sheet sheet-narrow center">
+      <div class="done-check">✓</div>
+      <div class="sheet-title">Order Complete!</div>
+      <div id="done-number" class="done-number"></div>
+      <div id="done-name" class="sheet-sub"></div>
+      <button id="done-next" class="btn-primary btn-wide">Next Customer</button>
+    </div>
+  </div>
+
+  <script src="menus/donuts.js"></script>
+  <script src="menus/burgers.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
