@@ -77,8 +77,11 @@
   }
 
   // ---------- Order numbers ----------
+  // One count for both shops (and both iPads when linked), so every ticket number is different
   function currentOrderNumber() {
-    return store.get("orderNum." + shop.id, 1);
+    const mine = store.get("orderNum", 1);
+    const seen = window.Kitchen ? window.Kitchen.nextNumber() : 1;
+    return Math.max(mine, seen);
   }
   function renderOrderNumber() {
     $("order-number").textContent = "Order #" + currentOrderNumber();
@@ -347,28 +350,33 @@
     $("checkout-modal").classList.add("hidden");
     $("co-name").blur();
 
+    const lines = order.lines.map((l) => {
+      const item = findItem(l.itemId);
+      return {
+        emoji: item.emoji,
+        name: item.name,
+        mods: describe(item, l.choices),
+        qty: l.qty,
+        amount: cents(unitPrice(item, l.choices) * l.qty),
+      };
+    });
+
     window.Checkout.start({
       shop,
       number: num,
       name,
       type: order.type,
-      lines: order.lines.map((l) => {
-        const item = findItem(l.itemId);
-        return {
-          emoji: item.emoji,
-          name: item.name,
-          mods: describe(item, l.choices),
-          qty: l.qty,
-          amount: cents(unitPrice(item, l.choices) * l.qty),
-        };
-      }),
+      lines,
       subtotal: cents(t.sub),
       tax: cents(t.tax),
-      onDone: (payment) => finishOrder(name, num, t, payment),
+      onDone: (payment) => finishOrder(name, num, t, payment, lines),
     });
   }
 
-  function finishOrder(name, num, t, payment) {
+  function finishOrder(name, num, t, payment, lines) {
+    // Send a ticket to the kitchen (and to the other iPad, if linked)
+    if (window.Kitchen) window.Kitchen.add({ shop, number: num, name, type: order.type, lines });
+
     const history = store.get("history", []);
     history.push({
       shop: shop.id,
@@ -381,7 +389,7 @@
       time: new Date().toISOString(),
     });
     store.set("history", history.slice(-500));
-    store.set("orderNum." + shop.id, num >= 999 ? 1 : num + 1);
+    store.set("orderNum", num >= 999 ? 1 : num + 1);
 
     order = newOrder();
     saveOrder();
@@ -432,6 +440,7 @@
   $("co-cancel").onclick = () => $("checkout-modal").classList.add("hidden");
   $("co-pay").onclick = startPayment;
   $("co-name").onkeydown = (e) => { if (e.key === "Enter") startPayment(); };
+  document.addEventListener("kearns:tickets", () => { if (shop) renderOrderNumber(); });
   $("btn-mute").onclick = () => { window.Sound.setMuted(!window.Sound.isMuted()); renderMute(); };
   renderMute();
 

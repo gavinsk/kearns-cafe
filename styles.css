@@ -819,3 +819,86 @@ button:disabled { opacity: 0.4; transform: none; }
   }
   .print-sheet .ccard { --u: 1in; box-shadow: none; break-inside: avoid; outline: 1px dashed #bbb; outline-offset: 0.04in; }
 }
+
+/* =====================================================================
+   PHASE 4 — kitchen tickets, order board, linking (kitchen.js, sync.js)
+   ===================================================================== */
+.picker-links-2 { margin-top: 14px; }
+.link-dot { font-size: 22px; }
+
+/* Kitchen */
+#kitchen { display: flex; flex-direction: column; background: #2b2d42; }
+.kitchen-bar { background: #1b1c2b; }
+.kitchen-cols { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 12px; min-height: 0; }
+.k-col { display: flex; flex-direction: column; background: rgba(255,255,255,0.06); border-radius: 18px; min-height: 0; }
+.k-col-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; color: #fff; font-size: 22px; font-weight: 800; }
+.k-col-head span { background: rgba(255,255,255,0.2); border-radius: 999px; padding: 2px 12px; font-size: 18px; }
+.k-col-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 10px 10px; display: flex; flex-direction: column; gap: 10px; }
+.k-empty { color: rgba(255,255,255,0.4); text-align: center; padding: 30px 0; font-size: 18px; }
+.ticket-card {
+  background: #fffdf5;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  border-top: 8px solid #f7a531;
+}
+.k-making .ticket-card { border-top-color: #e8618c; }
+.k-ready .ticket-card { border-top-color: #2a9d5b; }
+.tk-head { display: flex; align-items: baseline; gap: 10px; }
+.tk-num { font-size: 30px; font-weight: 900; }
+.tk-name { flex: 1; font-size: 20px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk-shop { font-size: 26px; }
+.tk-meta { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+.tk-lines { list-style: none; margin: 0 0 10px; padding: 0; font-size: 18px; }
+.tk-lines li { padding: 3px 0; border-bottom: 1px dashed #e6e0d0; }
+.tk-lines small { display: block; color: #b42318; font-size: 14px; font-weight: 700; padding-left: 28px; }
+.tk-btn { width: 100%; padding: 14px; border-radius: 12px; background: #2b2d42; color: #fff; font-size: 20px; font-weight: 800; }
+.k-making .tk-btn { background: #2a9d5b; }
+.k-ready .tk-btn { background: #8d99ae; }
+
+/* Order board (customer TV) */
+#board { background: #1b1c2b; color: #fff; display: flex; }
+.board-back { position: absolute; top: 12px; left: 12px; width: 48px; height: 48px; border-radius: 12px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); font-size: 24px; z-index: 2; }
+.board-cols { flex: 1; display: grid; grid-template-columns: 1fr 1fr; }
+.board-col { padding: 30px 24px; display: flex; flex-direction: column; min-height: 0; }
+.board-ready { background: #2a9d5b; }
+.board-title { font-size: 52px; font-weight: 900; text-align: center; margin-bottom: 20px; }
+.board-list { flex: 1; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 16px; overflow: hidden; }
+.b-chip { display: flex; flex-direction: column; align-items: center; min-width: 150px; padding: 14px 18px; border-radius: 20px; background: rgba(255,255,255,0.1); }
+.board-ready .b-chip { background: #fff; color: #1f6e41; animation: pop 0.5s ease-out; }
+.b-shop { font-size: 26px; line-height: 1; }
+.b-num { font-size: 72px; font-weight: 900; line-height: 1; }
+.b-name { font-size: 22px; font-weight: 700; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-empty { font-size: 60px; opacity: 0.3; }
+
+/* Link popup */
+.link-code { text-align: center; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+.link-status { font-size: 20px; font-weight: 700; min-height: 28px; }
+
+/* Pop-up message */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 140%);
+  opacity: 0;
+  visibility: hidden;
+  background: #2b2d42;
+  color: #fff;
+  padding: 16px 26px;
+  border-radius: 16px;
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  z-index: 50;
+  transition: transform 0.35s, opacity 0.35s;
+  pointer-events: none;
+  max-width: 90vw;
+  text-align: center;
+}
+.toast.show { transform: translate(-50%, 0); opacity: 1; visibility: visible; }
+
+@media (max-width: 900px) {
+  .kitchen-cols { grid-template-columns: 1fr; overflow-y: auto; }
+  .board-cols { grid-template-columns: 1fr; }
+}

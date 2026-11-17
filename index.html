@@ -28,6 +28,11 @@
       <button id="btn-bank" class="bank-link">💳 Kearns Bank · Cards</button>
       <a href="menu.html" class="bank-link">🖨️ Menus</a>
     </div>
+    <div class="picker-links picker-links-2">
+      <button id="btn-kitchen" class="bank-link">👩‍🍳 Kitchen</button>
+      <button id="btn-board" class="bank-link">📺 Order Board</button>
+      <button id="btn-link" class="bank-link">🔗 Link iPads</button>
+    </div>
   </section>
 
   <!-- ============ KEARNS BANK (cards) ============ -->
@@ -66,6 +71,42 @@
     </div>
   </div>
 
+  <!-- ============ KITCHEN ============ -->
+  <section id="kitchen" class="screen hidden">
+    <header class="topbar kitchen-bar">
+      <button id="kitchen-back" class="topbar-home" aria-label="Back">←</button>
+      <div class="topbar-brand"><span class="brand-emoji">👩‍🍳</span><span class="brand-name">Kitchen</span></div>
+    </header>
+    <div id="kitchen-cols" class="kitchen-cols"></div>
+  </section>
+
+  <!-- ============ ORDER BOARD ============ -->
+  <section id="board" class="screen hidden">
+    <button id="board-back" class="board-back" aria-label="Back">←</button>
+    <div class="board-cols">
+      <div class="board-col"><div class="board-title">Preparing…</div><div id="board-preparing" class="board-list"></div></div>
+      <div class="board-col board-ready"><div class="board-title">Ready! 🎉</div><div id="board-ready" class="board-list"></div></div>
+    </div>
+  </section>
+
+  <!-- ============ LINK IPADS POPUP ============ -->
+  <div id="link-modal" class="modal hidden">
+    <div class="sheet sheet-narrow center">
+      <div class="sheet-title">🔗 Link iPads</div>
+      <div class="sheet-sub">Type the <b>same code</b> on both iPads and tap Link.<br>Both need internet to find each other.</div>
+      <input id="link-code" class="name-input link-code" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      <button id="link-new" class="btn-small">🎲 New code</button>
+      <div id="link-status" class="link-status"></div>
+      <div class="sheet-foot">
+        <button id="link-unlink" class="btn-secondary hidden">Unlink</button>
+        <button id="link-close" class="btn-secondary">Close</button>
+        <button id="link-go" class="btn-primary">Link</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
   <!-- Filled in right before printing -->
   <div id="print-sheet" class="print-sheet"></div>
 
@@ -86,6 +127,7 @@
         <div id="order-number" class="order-number"></div>
         <div id="clock" class="clock"></div>
       </div>
+      <button id="link-dot" class="topbar-home link-dot" aria-label="iPad link status">⚪</button>
       <button id="btn-mute" class="topbar-home" aria-label="Sound on or off">🔊</button>
     </header>
 
@@ -173,12 +215,15 @@
 
   <script src="vendor/qrcode.js"></script>
   <script src="vendor/jsQR.js"></script>
+  <script src="vendor/peerjs.min.js"></script>
   <script src="sounds.js"></script>
   <script src="scanner.js"></script>
   <script src="cards.js"></script>
   <script src="menus/donuts.js"></script>
   <script src="menus/burgers.js"></script>
   <script src="checkout.js"></script>
+  <script src="kitchen.js"></script>
   <script src="app.js"></script>
+  <script src="sync.js"></script>
 </body>
 </html>

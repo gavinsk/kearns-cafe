@@ -34,8 +34,37 @@ window.Cards = (function () {
   function save(all) {
     try { localStorage.setItem("kearns.cards", JSON.stringify(all)); } catch (e) { /* ignore */ }
   }
+  // Save one changed card, stamp it with the time, and tell the other iPad (Sync)
+  const listeners = [];
+  function saveCard(all, card) {
+    card.updated = Date.now();
+    all[card.id] = card;
+    save(all);
+    listeners.forEach((fn) => fn(card));
+  }
+  function onChange(fn) { listeners.push(fn); }
   function list() {
-    return Object.values(load()).sort((x, y) => x.created - y.created);
+    return Object.values(load()).filter((c) => !c.deleted).sort((x, y) => x.created - y.created);
+  }
+  function all() { return load(); }
+
+  // Cards from the other iPad: keep whichever copy changed most recently
+  function merge(remote) {
+    const mine = load();
+    let changed = false;
+    Object.values(remote || {}).forEach((card) => {
+      if (!card || !card.id) return;
+      const local = mine[card.id];
+      if (!local || (card.updated || 0) > (local.updated || 0)) {
+        mine[card.id] = card;
+        changed = true;
+      }
+    });
+    if (changed) {
+      save(mine);
+      if (!$("bank").classList.contains("hidden")) renderBank();
+    }
+    return changed;
   }
 
   function randomId() {
@@ -61,8 +90,7 @@ window.Cards = (function () {
       color: color || 0,
       created: Date.now(),
     };
-    all[card.id] = card;
-    save(all);
+    saveCard(all, card);
     return card;
   }
 
@@ -70,7 +98,7 @@ window.Cards = (function () {
   function seed() {
     if (localStorage.getItem("kearns.cardsSeeded")) return;
     try { localStorage.setItem("kearns.cardsSeeded", "1"); } catch (e) { /* ignore */ }
-    if (list().length) return;
+    if (Object.keys(load()).length) return;
     create({ name: "Mom", type: "credit", color: 1 });
     create({ name: "Dad", type: "credit", color: 0 });
     create({ name: "Gift Card", type: "gift", start: 2500 });
@@ -100,9 +128,11 @@ window.Cards = (function () {
     if (!info) return null;
     const all = load();
     if (!all[info.id]) {
-      all[info.id] = { ...info, balance: info.start, stars: 0, color: 0, created: Date.now() };
+      // updated: 0 so any real record from the other iPad wins over this fresh copy
+      all[info.id] = { ...info, balance: info.start, stars: 0, color: 0, created: Date.now(), updated: 0 };
       save(all);
     }
+    if (all[info.id].deleted) return null;
     return all[info.id];
   }
 
@@ -116,7 +146,7 @@ window.Cards = (function () {
       if (card.balance < cents) return { ok: false, balance: card.balance };
       card.balance -= cents;
     }
-    save(all);
+    saveCard(all, card);
     return { ok: true, balance: card.balance };
   }
 
@@ -128,7 +158,7 @@ window.Cards = (function () {
     card.stars = (card.stars || 0) + 1;
     let reward = false;
     if (card.stars >= STARS_FOR_REWARD) { card.stars = 0; reward = true; }
-    save(all);
+    saveCard(all, card);
     return { stars: card.stars, reward };
   }
 
@@ -136,13 +166,13 @@ window.Cards = (function () {
     const all = load();
     if (!all[id]) return;
     all[id].balance += cents;
-    save(all);
+    saveCard(all, all[id]);
   }
 
   function remove(id) {
     const all = load();
-    delete all[id];
-    save(all);
+    if (!all[id]) return;
+    saveCard(all, { id, deleted: true, created: all[id].created });
   }
 
   // ---------- Card picture ----------
@@ -319,5 +349,5 @@ window.Cards = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 
-  return { parse, encode, fromScan, charge, addStar, reload, create, list, faceHTML, seed, STARS_FOR_REWARD };
+  return { parse, encode, fromScan, charge, addStar, reload, create, list, all, merge, onChange, faceHTML, seed, STARS_FOR_REWARD };
 })();
