@@ -43,6 +43,7 @@
         <div id="order-number" class="order-number"></div>
         <div id="clock" class="clock"></div>
       </div>
+      <button id="btn-mute" class="topbar-home" aria-label="Sound on or off">🔊</button>
     </header>
 
     <main class="register-body">
@@ -94,7 +95,7 @@
     </div>
   </div>
 
-  <!-- ============ CHECKOUT POPUP (Phase 1: simple) ============ -->
+  <!-- ============ NAME FOR THE ORDER ============ -->
   <div id="checkout-modal" class="modal hidden">
     <div class="sheet sheet-narrow">
       <div class="sheet-title center">Name for the order?</div>
@@ -103,24 +104,34 @@
       <div class="co-total">Total: <strong id="co-total"></strong></div>
       <div class="sheet-foot">
         <button id="co-cancel" class="btn-secondary">Back</button>
-        <button id="co-pay" class="btn-primary">Paid ✓</button>
+        <button id="co-pay" class="btn-primary">Turn to Customer →</button>
       </div>
     </div>
   </div>
 
-  <!-- ============ ORDER COMPLETE ============ -->
-  <div id="done-modal" class="modal hidden">
-    <div class="sheet sheet-narrow center">
-      <div class="done-check">✓</div>
-      <div class="sheet-title">Order Complete!</div>
-      <div id="done-number" class="done-number"></div>
-      <div id="done-name" class="sheet-sub"></div>
-      <button id="done-next" class="btn-primary btn-wide">Next Customer</button>
+  <!-- ============ CUSTOMER PAYMENT SCREEN (Square-style) ============ -->
+  <section id="pay" class="pay screen hidden">
+    <header class="pay-head">
+      <button id="pay-cancel" class="pay-cancel">✕ Cancel</button>
+      <div class="pay-head-mid">
+        <div id="pay-shop" class="pay-shop"></div>
+        <div id="pay-who" class="pay-who"></div>
+      </div>
+      <div id="pay-role" class="pay-role"></div>
+    </header>
+    <div class="pay-body">
+      <aside class="pay-summary">
+        <ul id="pay-lines" class="pay-lines"></ul>
+        <div id="pay-totals" class="pay-totals"></div>
+      </aside>
+      <div id="pay-stage" class="pay-stage"></div>
     </div>
-  </div>
+  </section>
 
+  <script src="sounds.js"></script>
   <script src="menus/donuts.js"></script>
   <script src="menus/burgers.js"></script>
+  <script src="checkout.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

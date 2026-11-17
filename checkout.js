@@ -1,0 +1,371 @@
+// Kearns Café — Square-style checkout.
+// The register calls Checkout.start({...}) and gets the payment back in onDone(payment).
+// All money in this file is in whole cents (e.g. 847 = $8.47) so the math is always exact.
+
+window.Checkout = (function () {
+  "use strict";
+
+  // ---------- Settings ----------
+  const TIP_PERCENTS = [15, 20, 25];
+  const CHANGE_PRACTICE = true;   // cashier has to figure out the change before the app shows it
+  const BILLS = [10000, 5000, 2000, 1000, 500, 100];
+  const COINS = [25, 10, 5, 1];
+  const COIN_NAMES = { 25: "Quarter", 10: "Dime", 5: "Nickel", 1: "Penny" };
+  const CARD_BRANDS = ["Visa", "Mastercard", "Discover", "Kearns Card"];
+
+  const $ = (id) => document.getElementById(id);
+  const money = (c) => (c < 0 ? "-" : "") + "$" + (Math.abs(c) / 100).toFixed(2);
+  const sound = (name) => { if (window.Sound) window.Sound[name](); };
+
+  let o = null;     // the order being paid for (from the register)
+  let pay = null;   // payment details being collected
+  let timers = [];
+
+  function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+
+  // ---------- Start / finish ----------
+  function start(order) {
+    o = order;
+    pay = { method: null, tip: 0, tendered: 0, change: 0, card: null, receipt: null };
+    $("pay-shop").textContent = `${o.shop.emoji} ${o.shop.name}`;
+    $("pay-who").textContent = `Order #${o.number}` + (o.name ? ` · ${o.name}` : "");
+    renderSummary();
+    $("pay").classList.remove("hidden");
+    show("tip");
+  }
+
+  function close() {
+    clearTimers();
+    $("pay").classList.add("hidden");
+  }
+
+  function total() { return o.subtotal + o.tax + pay.tip; }
+
+  // ---------- Order summary (left side) ----------
+  function renderSummary() {
+    $("pay-lines").innerHTML = o.lines.map((l) => `
+      <li>
+        <span class="pl-emoji">${l.emoji}</span>
+        <span class="pl-main"><b>${l.qty > 1 ? l.qty + " × " : ""}${l.name}</b>${l.mods ? `<small>${l.mods}</small>` : ""}</span>
+        <span class="pl-price">${money(l.amount)}</span>
+      </li>`).join("");
+    $("pay-totals").innerHTML = `
+      <div><span>Subtotal</span><span>${money(o.subtotal)}</span></div>
+      <div><span>Tax</span><span>${money(o.tax)}</span></div>
+      ${pay.tip ? `<div><span>Tip</span><span>${money(pay.tip)}</span></div>` : ""}
+      <div class="pt-total"><span>Total</span><span>${money(total())}</span></div>`;
+  }
+
+  // ---------- Steps ----------
+  // who: "customer" or "cashier" — changes the look so kids know whose turn it is
+  const STEPS = {
+    tip:          { who: "customer", render: renderTip },
+    method:       { who: "customer", render: renderMethod },
+    card:         { who: "customer", render: renderCard },
+    cashHandoff:  { who: "customer", render: renderCashHandoff },
+    cashTender:   { who: "cashier",  render: renderCashTender },
+    cashChange:   { who: "cashier",  render: renderCashChange },
+    receipt:      { who: "customer", render: renderReceiptChoice },
+    thanks:       { who: "customer", render: renderThanks },
+  };
+
+  function show(step) {
+    clearTimers();
+    const s = STEPS[step];
+    const el = $("pay");
+    el.classList.toggle("is-cashier", s.who === "cashier");
+    $("pay-role").textContent = s.who === "cashier" ? "🧑‍💼 Cashier" : "🙂 Customer";
+    $("pay-cancel").classList.toggle("hidden", step === "thanks" || step === "receipt");
+    const stage = $("pay-stage");
+    stage.innerHTML = "";
+    stage.className = "pay-stage step-" + step;
+    s.render(stage);
+  }
+
+  function button(label, cls, onClick) {
+    const b = document.createElement("button");
+    b.className = cls;
+    b.innerHTML = label;
+    b.onclick = onClick;
+    return b;
+  }
+
+  function h(html) {
+    const d = document.createElement("div");
+    d.innerHTML = html.trim();
+    return d.firstChild;
+  }
+
+  // Step 1: tip
+  function renderTip(stage) {
+    stage.appendChild(h(`<div class="pay-title">Add a tip?</div>`));
+    stage.appendChild(h(`<div class="pay-sub">Thanks for visiting ${o.shop.name}!</div>`));
+    const grid = h(`<div class="tip-grid"></div>`);
+    TIP_PERCENTS.forEach((pct) => {
+      const amt = Math.round(o.subtotal * pct / 100);
+      grid.appendChild(button(`<span class="tip-pct">${pct}%</span><span class="tip-amt">${money(amt)}</span>`, "tip-btn", () => {
+        pay.tip = amt; renderSummary(); show("method");
+      }));
+    });
+    grid.appendChild(button(`<span class="tip-pct">No Tip</span>`, "tip-btn tip-none", () => {
+      pay.tip = 0; renderSummary(); show("method");
+    }));
+    stage.appendChild(grid);
+  }
+
+  // Step 2: card or cash
+  function renderMethod(stage) {
+    stage.appendChild(h(`<div class="pay-title">Total</div>`));
+    stage.appendChild(h(`<div class="pay-big">${money(total())}</div>`));
+    stage.appendChild(h(`<div class="pay-sub">How would you like to pay?</div>`));
+    const row = h(`<div class="method-row"></div>`);
+    row.appendChild(button(`<span class="m-emoji">💳</span>Card or Phone`, "method-btn", () => show("card")));
+    row.appendChild(button(`<span class="m-emoji">💵</span>Cash`, "method-btn", () => show("cashHandoff")));
+    stage.appendChild(row);
+    stage.appendChild(button("← Change tip", "pay-link", () => show("tip")));
+  }
+
+  // Step 3a: tap to pay
+  function renderCard(stage) {
+    stage.appendChild(h(`<div class="pay-big">${money(total())}</div>`));
+    const zone = h(`
+      <button class="tap-zone">
+        <span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span>
+        <span class="tap-icon">)))</span>
+      </button>`);
+    stage.appendChild(zone);
+    const msg = h(`<div class="pay-sub">Tap your card or phone here</div>`);
+    stage.appendChild(msg);
+    const back = button("← Pay another way", "pay-link", () => show("method"));
+    stage.appendChild(back);
+
+    let busy = false;
+    zone.onclick = () => {
+      if (busy) return;
+      busy = true;
+      back.classList.add("hidden");
+      sound("beep");
+      zone.classList.add("processing");
+      msg.innerHTML = `<span class="spinner"></span> Processing…`;
+      later(() => {
+        pay.method = "card";
+        pay.card = {
+          brand: CARD_BRANDS[Math.floor(Math.random() * CARD_BRANDS.length)],
+          last4: String(1000 + Math.floor(Math.random() * 9000)),
+        };
+        sound("approved");
+        zone.classList.remove("processing");
+        zone.classList.add("approved");
+        zone.innerHTML = `<span class="tap-check">✓</span>`;
+        msg.innerHTML = `<b>Approved</b><br>${pay.card.brand} •••• ${pay.card.last4}`;
+        later(() => show("receipt"), 1500);
+      }, 1600);
+    };
+  }
+
+  // Step 3b: cash — hand the iPad back to the cashier
+  function renderCashHandoff(stage) {
+    stage.appendChild(h(`<div class="pay-emoji">💵</div>`));
+    stage.appendChild(h(`<div class="pay-title">Paying with cash</div>`));
+    stage.appendChild(h(`<div class="pay-sub">Please hand the iPad back to the cashier<br>and give them your money.</div>`));
+    stage.appendChild(button("I'm the cashier →", "pay-primary", () => show("cashTender")));
+    stage.appendChild(button("← Pay another way", "pay-link", () => show("method")));
+  }
+
+  // Step 4: cashier counts the money the customer gave
+  function renderCashTender(stage) {
+    const due = total();
+    stage.appendChild(h(`<div class="due-row"><span>Total due</span><b>${money(due)}</b></div>`));
+    const given = h(`<div class="given"><span>Customer gave</span><b id="given-amt">$0.00</b><small id="given-note"></small></div>`);
+    stage.appendChild(given);
+
+    const money_ = h(`<div class="cash-pad"></div>`);
+    BILLS.forEach((c) => money_.appendChild(button(`$${c / 100}`, "bill", () => add(c))));
+    COINS.forEach((c) => money_.appendChild(button(`${c}¢`, "coin coin-" + c, () => add(c))));
+    stage.appendChild(money_);
+
+    const row = h(`<div class="cash-actions"></div>`);
+    row.appendChild(button("Clear", "pay-secondary", () => { pay.tendered = 0; update(); }));
+    row.appendChild(button("Exact amount", "pay-secondary", () => { pay.tendered = due; update(); }));
+    const open = button("Open Drawer 💰", "pay-primary", () => {
+      pay.method = "cash";
+      pay.change = pay.tendered - due;
+      sound("chaChing");
+      show("cashChange");
+    });
+    row.appendChild(open);
+    stage.appendChild(row);
+    stage.appendChild(button("← Back", "pay-link", () => { pay.tendered = 0; show("method"); }));
+
+    function add(c) { pay.tendered += c; update(); }
+    function update() {
+      $("given-amt").textContent = money(pay.tendered);
+      const short = due - pay.tendered;
+      $("given-note").textContent = pay.tendered === 0 ? "Tap the bills and coins they gave you" :
+        short > 0 ? `Still need ${money(short)} more` : "That's enough!";
+      $("given-note").className = short > 0 ? "" : "ok";
+      open.disabled = short > 0;
+    }
+    update();
+  }
+
+  // Step 5: figure out the change
+  function renderCashChange(stage) {
+    const change = pay.change;
+    if (change === 0) {
+      stage.appendChild(h(`<div class="pay-emoji">🎉</div>`));
+      stage.appendChild(h(`<div class="pay-title">Exact change!</div>`));
+      stage.appendChild(h(`<div class="pay-sub">No change needed. Close the drawer.</div>`));
+      stage.appendChild(button("Turn to customer →", "pay-primary", () => show("receipt")));
+      return;
+    }
+
+    const showAnswer = () => {
+      stage.innerHTML = "";
+      stage.appendChild(h(`<div class="pay-title">Give back <span class="hl">${money(change)}</span></div>`));
+      stage.appendChild(changeBreakdown(change));
+      stage.appendChild(button("Change given · Turn to customer →", "pay-primary", () => show("receipt")));
+    };
+
+    if (!CHANGE_PRACTICE) { showAnswer(); return; }
+
+    let typed = 0;
+    let misses = 0;
+    stage.appendChild(h(`<div class="pay-title">How much change?</div>`));
+    stage.appendChild(h(`<div class="math">${money(pay.tendered)} − ${money(total())} = ?</div>`));
+    const display = h(`<div class="keypad-display">$0.00</div>`);
+    stage.appendChild(display);
+    const feedback = h(`<div class="feedback"></div>`);
+    stage.appendChild(feedback);
+
+    const pad = h(`<div class="keypad"></div>`);
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "⌫"].forEach((k) => {
+      pad.appendChild(button(k, "key" + (/\d/.test(k) ? "" : " key-fn"), () => {
+        if (k === "C") typed = 0;
+        else if (k === "⌫") typed = Math.floor(typed / 10);
+        else if (typed < 100000) typed = typed * 10 + Number(k);
+        display.textContent = money(typed);
+        feedback.textContent = "";
+      }));
+    });
+    stage.appendChild(pad);
+
+    const row = h(`<div class="cash-actions"></div>`);
+    const hint = button("Show me", "pay-secondary hidden", showAnswer);
+    row.appendChild(hint);
+    row.appendChild(button("Check ✓", "pay-primary", () => {
+      if (typed === change) {
+        sound("yay");
+        feedback.className = "feedback ok";
+        feedback.textContent = "Correct! Great job! 🎉";
+        later(showAnswer, 1200);
+      } else {
+        sound("buzz");
+        misses++;
+        feedback.className = "feedback bad";
+        feedback.textContent = typed > change ? "Too much! Try again." : "Not enough! Try again.";
+        if (misses >= 2) hint.classList.remove("hidden");
+      }
+    }));
+    stage.appendChild(row);
+  }
+
+  // Which bills and coins to hand back, fewest pieces first
+  function changeBreakdown(cents) {
+    const wrap = h(`<div class="breakdown"></div>`);
+    let left = cents;
+    BILLS.concat(COINS).forEach((d) => {
+      const n = Math.floor(left / d);
+      left -= n * d;
+      if (!n) return;
+      const isBill = d >= 100;
+      const piece = isBill
+        ? `<span class="bill-pic">$${d / 100}</span>`
+        : `<span class="coin-pic coin-${d}">${d}¢</span>`;
+      let label = isBill ? `$${d / 100} bill` : COIN_NAMES[d];
+      if (n > 1) label = d === 1 ? "Pennies" : label + "s";
+      wrap.appendChild(h(`<div class="bd-row"><span class="bd-n">${n} ×</span>${piece}<span class="bd-label">${label}</span></div>`));
+    });
+    return wrap;
+  }
+
+  // Step 6: receipt?
+  function renderReceiptChoice(stage) {
+    stage.appendChild(h(`<div class="pay-emoji">🧾</div>`));
+    stage.appendChild(h(`<div class="pay-title">Would you like a receipt?</div>`));
+    const grid = h(`<div class="receipt-grid"></div>`);
+    const sent = (how) => {
+      pay.receipt = how;
+      stage.innerHTML = "";
+      stage.appendChild(h(`<div class="pay-emoji">📨</div>`));
+      stage.appendChild(h(`<div class="pay-title">Receipt sent by ${how}!</div>`));
+      later(() => show("thanks"), 1400);
+    };
+    grid.appendChild(button("🖨️<br>Print", "receipt-btn", () => { pay.receipt = "print"; printReceipt(stage); }));
+    grid.appendChild(button("📱<br>Text", "receipt-btn", () => sent("text")));
+    grid.appendChild(button("✉️<br>Email", "receipt-btn", () => sent("email")));
+    grid.appendChild(button("🚫<br>No receipt", "receipt-btn", () => { pay.receipt = "none"; show("thanks"); }));
+    stage.appendChild(grid);
+  }
+
+  function printReceipt(stage) {
+    stage.innerHTML = "";
+    const now = new Date();
+    const lines = o.lines.map((l) => `
+      <div class="r-line"><span>${l.qty} ${l.name}</span><span>${money(l.amount)}</span></div>
+      ${l.mods ? `<div class="r-mods">${l.mods}</div>` : ""}`).join("");
+    const payment = pay.method === "card"
+      ? `<div class="r-line"><span>${pay.card.brand} •••• ${pay.card.last4}</span><span>${money(total())}</span></div><div class="r-mods">APPROVED</div>`
+      : `<div class="r-line"><span>Cash</span><span>${money(pay.tendered)}</span></div><div class="r-line"><span>Change</span><span>${money(pay.change)}</span></div>`;
+    const paper = h(`
+      <div class="paper-wrap"><div class="paper">
+        <div class="r-shop">${o.shop.emoji} ${o.shop.name.toUpperCase()}</div>
+        <div class="r-center">${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</div>
+        <div class="r-center">ORDER #${o.number} · ${o.type.toUpperCase()}${o.name ? "<br>" + o.name.toUpperCase() : ""}</div>
+        <div class="r-rule"></div>
+        ${lines}
+        <div class="r-rule"></div>
+        <div class="r-line"><span>Subtotal</span><span>${money(o.subtotal)}</span></div>
+        <div class="r-line"><span>Tax</span><span>${money(o.tax)}</span></div>
+        ${pay.tip ? `<div class="r-line"><span>Tip</span><span>${money(pay.tip)}</span></div>` : ""}
+        <div class="r-line r-total"><span>TOTAL</span><span>${money(total())}</span></div>
+        <div class="r-rule"></div>
+        ${payment}
+        <div class="r-rule"></div>
+        <div class="r-center">THANK YOU!<br>COME AGAIN SOON</div>
+      </div></div>`);
+    stage.appendChild(paper);
+    stage.appendChild(button("Done ✓", "pay-primary", () => show("thanks")));
+  }
+
+  // Step 7: thank you
+  function renderThanks(stage) {
+    sound("ding");
+    stage.appendChild(h(`<div class="pay-emoji">${o.shop.emoji}</div>`));
+    stage.appendChild(h(`<div class="pay-title">Thank you${o.name ? ", " + o.name : ""}!</div>`));
+    stage.appendChild(h(`<div class="pay-sub">Your order number is</div>`));
+    stage.appendChild(h(`<div class="pay-big order-big">#${o.number}</div>`));
+    stage.appendChild(button("Next Customer →", "pay-primary", () => {
+      const result = { ...pay, total: total() };
+      const cb = o.onDone;
+      close();
+      cb(result);
+    }));
+  }
+
+  // ---------- Cancel ----------
+  function wireCancel() {
+    $("pay-cancel").onclick = () => {
+      if (pay.method && !confirm("Payment is done. Cancel anyway?")) return;
+      const cb = o.onCancel;
+      close();
+      if (cb) cb();
+    };
+  }
+
+  document.addEventListener("DOMContentLoaded", wireCancel);
+  if (document.readyState !== "loading") wireCancel();
+
+  return { start, changeBreakdown, _money: money };
+})();

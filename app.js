@@ -1,5 +1,6 @@
 // Kearns Café — pretend cash register
-// Phase 1: shop picker, menu, order ticket with options, tax, totals, simple checkout.
+// The register: shop picker, menu, order ticket with options, tax, totals.
+// Payment happens in checkout.js; sounds live in sounds.js.
 
 (function () {
   "use strict";
@@ -336,11 +337,38 @@
     $("checkout-modal").classList.remove("hidden");
   }
 
-  function completeOrder() {
+  // Hand off to the Square-style customer screen (checkout.js)
+  function startPayment() {
     const name = $("co-name").value.trim();
     const num = currentOrderNumber();
     const t = totals();
+    const cents = (n) => Math.round(n * 100);
 
+    $("checkout-modal").classList.add("hidden");
+    $("co-name").blur();
+
+    window.Checkout.start({
+      shop,
+      number: num,
+      name,
+      type: order.type,
+      lines: order.lines.map((l) => {
+        const item = findItem(l.itemId);
+        return {
+          emoji: item.emoji,
+          name: item.name,
+          mods: describe(item, l.choices),
+          qty: l.qty,
+          amount: cents(unitPrice(item, l.choices) * l.qty),
+        };
+      }),
+      subtotal: cents(t.sub),
+      tax: cents(t.tax),
+      onDone: (payment) => finishOrder(name, num, t, payment),
+    });
+  }
+
+  function finishOrder(name, num, t, payment) {
     const history = store.get("history", []);
     history.push({
       shop: shop.id,
@@ -349,25 +377,21 @@
       type: order.type,
       lines: order.lines,
       ...t,
+      payment,
       time: new Date().toISOString(),
     });
     store.set("history", history.slice(-500));
     store.set("orderNum." + shop.id, num >= 999 ? 1 : num + 1);
 
-    $("checkout-modal").classList.add("hidden");
-    $("co-name").blur();
-    $("done-number").textContent = "#" + num;
-    $("done-name").textContent = name ? `for ${name}` : "";
-    $("done-modal").classList.remove("hidden");
-  }
-
-  function nextCustomer() {
     order = newOrder();
     saveOrder();
-    $("done-modal").classList.add("hidden");
     renderTicket();
     renderOrderType();
     renderOrderNumber();
+  }
+
+  function renderMute() {
+    $("btn-mute").textContent = window.Sound.isMuted() ? "🔇" : "🔊";
   }
 
   // ---------- Clock ----------
@@ -406,9 +430,10 @@
   $("item-modal").onclick = (e) => { if (e.target.id === "item-modal") closeItemModal(); };
 
   $("co-cancel").onclick = () => $("checkout-modal").classList.add("hidden");
-  $("co-pay").onclick = completeOrder;
-  $("co-name").onkeydown = (e) => { if (e.key === "Enter") completeOrder(); };
-  $("done-next").onclick = nextCustomer;
+  $("co-pay").onclick = startPayment;
+  $("co-name").onkeydown = (e) => { if (e.key === "Enter") startPayment(); };
+  $("btn-mute").onclick = () => { window.Sound.setMuted(!window.Sound.isMuted()); renderMute(); };
+  renderMute();
 
   // ---------- Start ----------
   renderPicker();
