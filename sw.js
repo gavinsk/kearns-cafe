@@ -2,7 +2,7 @@
 // and falls back to the saved copy when there's no internet.
 const CACHE = "kearns-cafe-v3";
 const FILES = [
-  "./", "index.html", "styles.css", "app.js", "checkout.js", "sounds.js", "cards.js", "scanner.js", "vendor/qrcode.js", "vendor/jsQR.js",
+  "./", "index.html", "menu.html", "styles.css", "app.js", "checkout.js", "sounds.js", "cards.js", "scanner.js", "vendor/qrcode.js", "vendor/jsQR.js",
   "menus/donuts.js", "menus/burgers.js",
   "manifest.json", "icons/icon.svg", "icons/icon-180.png", "icons/icon-512.png",
 ];

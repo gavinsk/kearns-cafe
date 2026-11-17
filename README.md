@@ -29,6 +29,10 @@ Edit `menus/donuts.js` or `menus/burgers.js`. Each item is one line:
 
 Tax rate and the quick-pick customer names are at the top of `app.js`.
 
+## Printable menus
+Open `menu.html` (the **🖨️ Menus** button on the start screen) and print, or use `Kearns-Cafe-Menus.pdf`.
+The menu page is built from the same menu files as the register, so it always matches.
+
 ## Roadmap
 - [x] Phase 1 – Register: shops, menus, options, tax, totals
 - [x] Phase 2 – Square-style customer checkout: tips, tap to pay, cash and change, receipts, sounds
