@@ -24,7 +24,47 @@
     <h1 class="picker-title">Kearns Café</h1>
     <p class="picker-sub">Which shop are you working at today?</p>
     <div id="shop-buttons" class="shop-buttons"></div>
+    <button id="btn-bank" class="bank-link">💳 Kearns Bank · Cards</button>
   </section>
+
+  <!-- ============ KEARNS BANK (cards) ============ -->
+  <section id="bank" class="screen hidden">
+    <header class="topbar bank-bar">
+      <button id="bank-back" class="topbar-home" aria-label="Back">←</button>
+      <div class="topbar-brand"><span class="brand-emoji">🏦</span><span class="brand-name">Kearns Bank</span></div>
+      <button id="bank-check" class="btn-small">📷 Check a Card</button>
+      <button id="bank-print" class="btn-small">🖨️ Print Cards</button>
+      <button id="bank-new" class="btn-small bank-new">+ New Card</button>
+    </header>
+    <div id="bank-cards" class="bank-cards"></div>
+    <div id="bank-scan" class="modal hidden">
+      <div class="sheet sheet-narrow center">
+        <div class="sheet-title">Check a Card</div>
+        <div id="bank-scan-view" class="scan-wrap"></div>
+        <div id="bank-scan-msg" class="sheet-sub"></div>
+        <button id="bank-scan-close" class="btn-secondary">Close</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NEW CARD POPUP ============ -->
+  <div id="newcard-modal" class="modal hidden">
+    <div class="sheet sheet-narrow">
+      <div class="sheet-title center">New Card</div>
+      <div id="nc-preview" class="nc-preview"></div>
+      <input id="nc-name" class="name-input" type="text" placeholder="Name on the card" maxlength="18" autocomplete="off" autocapitalize="words">
+      <div id="nc-types" class="chips center-chips"></div>
+      <div id="nc-amount-row" class="nc-row"><div class="group-label">Starting balance</div><div id="nc-amounts" class="chips center-chips"></div></div>
+      <div id="nc-color-row" class="nc-row"><div class="group-label">Color</div><div id="nc-colors" class="chips center-chips"></div></div>
+      <div class="sheet-foot">
+        <button id="nc-cancel" class="btn-secondary">Cancel</button>
+        <button id="nc-save" class="btn-primary">Make Card</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filled in right before printing -->
+  <div id="print-sheet" class="print-sheet"></div>
 
   <!-- ============ REGISTER ============ -->
   <section id="register" class="screen hidden">
@@ -128,7 +168,11 @@
     </div>
   </section>
 
+  <script src="vendor/qrcode.js"></script>
+  <script src="vendor/jsQR.js"></script>
   <script src="sounds.js"></script>
+  <script src="scanner.js"></script>
+  <script src="cards.js"></script>
   <script src="menus/donuts.js"></script>
   <script src="menus/burgers.js"></script>
   <script src="checkout.js"></script>

@@ -37,6 +37,7 @@ window.Checkout = (function () {
 
   function close() {
     clearTimers();
+    stopScanner();
     $("pay").classList.add("hidden");
   }
 
@@ -63,6 +64,7 @@ window.Checkout = (function () {
     tip:          { who: "customer", render: renderTip },
     method:       { who: "customer", render: renderMethod },
     card:         { who: "customer", render: renderCard },
+    scan:         { who: "customer", render: renderScan },
     cashHandoff:  { who: "customer", render: renderCashHandoff },
     cashTender:   { who: "cashier",  render: renderCashTender },
     cashChange:   { who: "cashier",  render: renderCashChange },
@@ -72,6 +74,7 @@ window.Checkout = (function () {
 
   function show(step) {
     clearTimers();
+    stopScanner();
     const s = STEPS[step];
     const el = $("pay");
     el.classList.toggle("is-cashier", s.who === "cashier");
@@ -126,7 +129,7 @@ window.Checkout = (function () {
     stage.appendChild(button("← Change tip", "pay-link", () => show("tip")));
   }
 
-  // Step 3a: tap to pay
+  // Step 3a: tap (pretend card) or scan a printed Kearns card
   function renderCard(stage) {
     stage.appendChild(h(`<div class="pay-big">${money(total())}</div>`));
     const zone = h(`
@@ -137,31 +140,122 @@ window.Checkout = (function () {
     stage.appendChild(zone);
     const msg = h(`<div class="pay-sub">Tap your card or phone here</div>`);
     stage.appendChild(msg);
+    const row = h(`<div class="method-row"></div>`);
+    if (window.Scanner && window.Cards) {
+      row.appendChild(button("📷 Scan My Card", "pay-secondary", () => show("scan")));
+    }
+    stage.appendChild(row);
     const back = button("← Pay another way", "pay-link", () => show("method"));
     stage.appendChild(back);
 
-    let busy = false;
     zone.onclick = () => {
-      if (busy) return;
-      busy = true;
+      if (zone.dataset.busy) return;
+      zone.dataset.busy = "1";
+      row.classList.add("hidden");
       back.classList.add("hidden");
-      sound("beep");
-      zone.classList.add("processing");
-      msg.innerHTML = `<span class="spinner"></span> Processing…`;
-      later(() => {
-        pay.method = "card";
+      processCard(stage, zone, msg, null);
+    };
+  }
+
+  // Step 3a-2: camera scanner
+  let scanner = null;
+  function stopScanner() {
+    if (scanner) { scanner.stop(); scanner = null; }
+  }
+
+  function renderScan(stage) {
+    stage.appendChild(h(`<div class="pay-title">Hold your card up to the camera</div>`));
+    const view = h(`<div class="scan-wrap"></div>`);
+    stage.appendChild(view);
+    const msg = h(`<div class="pay-sub">Show the QR code on your Kearns card</div>`);
+    stage.appendChild(msg);
+    stage.appendChild(button("← Back", "pay-link", () => show("card")));
+
+    scanner = window.Scanner.open(view, (text) => {
+      const card = window.Cards.fromScan(text);
+      if (!card) {
+        sound("buzz");
+        msg.innerHTML = `<span class="bad-text">That's not a Kearns card. Try again!</span>`;
+        return true;
+      }
+      scanner = null;
+      stage.innerHTML = "";
+      stage.className = "pay-stage step-card";
+      stage.appendChild(h(`<div class="pay-big">${money(total())}</div>`));
+      const zone = h(`<div class="tap-zone"><span class="tap-icon">💳</span></div>`);
+      stage.appendChild(zone);
+      const m = h(`<div class="pay-sub"></div>`);
+      stage.appendChild(m);
+      processCard(stage, zone, m, card);
+      return false;
+    });
+  }
+
+  // Shared by tap & scan. card = a saved Kearns card, or null for a pretend tap
+  function processCard(stage, zone, msg, card) {
+    sound("beep");
+    zone.classList.add("processing");
+    msg.innerHTML = `<span class="spinner"></span> Processing…`;
+    later(() => {
+      zone.classList.remove("processing");
+
+      if (card) {
+        const result = window.Cards.charge(card.id, total());
+        if (!result.ok) {
+          sound("buzz");
+          zone.classList.add("declined");
+          zone.innerHTML = `<span class="tap-check">✕</span>`;
+          msg.innerHTML = `<b class="bad-text">Declined</b><br>Not enough money on this gift card.<br>Balance: ${money(result.balance)}`;
+          const row = h(`<div class="method-row"></div>`);
+          row.appendChild(button("Try another card", "pay-secondary", () => show("card")));
+          row.appendChild(button("💵 Pay with cash", "pay-secondary", () => show("cashHandoff")));
+          stage.appendChild(row);
+          return;
+        }
+        const star = window.Cards.addStar(card.id);
+        pay.card = {
+          id: card.id,
+          name: card.name,
+          brand: card.type === "gift" ? "Kearns Gift" : "Kearns Card",
+          last4: card.last4,
+          gift: card.type === "gift",
+          balance: result.balance,
+          stars: star.stars,
+          reward: star.reward,
+        };
+      } else {
         pay.card = {
           brand: CARD_BRANDS[Math.floor(Math.random() * CARD_BRANDS.length)],
           last4: String(1000 + Math.floor(Math.random() * 9000)),
         };
-        sound("approved");
-        zone.classList.remove("processing");
-        zone.classList.add("approved");
-        zone.innerHTML = `<span class="tap-check">✓</span>`;
-        msg.innerHTML = `<b>Approved</b><br>${pay.card.brand} •••• ${pay.card.last4}`;
-        later(() => show("receipt"), 1500);
-      }, 1600);
-    };
+      }
+
+      pay.method = "card";
+      sound("approved");
+      zone.classList.add("approved");
+      zone.innerHTML = `<span class="tap-check">✓</span>`;
+      const c = pay.card;
+      let html = `<b>Approved</b><br>${c.name && !/gift card/i.test(c.name) ? esc(c.name) + " · " : ""}${c.brand} •••• ${c.last4}`;
+      if (c.gift) html += `<br>Balance left: <b>${money(c.balance)}</b>`;
+      if (c.id) {
+        html += c.reward
+          ? `<div class="reward">🎁 You earned a FREE TREAT!<br><small>Ask the cashier for your treat</small></div>`
+          : `<div class="stars">${starRow(c.stars)}<br><small>+1 star! ${c.stars} of ${window.Cards.STARS_FOR_REWARD}</small></div>`;
+      }
+      msg.innerHTML = html;
+      if (c.reward) later(() => sound("yay"), 600);
+      later(() => show("receipt"), c.id ? 3500 : 1500);
+    }, 1600);
+  }
+
+  function starRow(n) {
+    let s = "";
+    for (let i = 0; i < window.Cards.STARS_FOR_REWARD; i++) s += i < n ? "⭐" : "☆";
+    return s;
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
   }
 
   // Step 3b: cash — hand the iPad back to the cashier
@@ -315,14 +409,18 @@ window.Checkout = (function () {
     const lines = o.lines.map((l) => `
       <div class="r-line"><span>${l.qty} ${l.name}</span><span>${money(l.amount)}</span></div>
       ${l.mods ? `<div class="r-mods">${l.mods}</div>` : ""}`).join("");
+    const c = pay.card || {};
     const payment = pay.method === "card"
-      ? `<div class="r-line"><span>${pay.card.brand} •••• ${pay.card.last4}</span><span>${money(total())}</span></div><div class="r-mods">APPROVED</div>`
+      ? `<div class="r-line"><span>${c.brand} •••• ${c.last4}</span><span>${money(total())}</span></div>
+         <div class="r-mods">APPROVED${c.name ? " · " + esc(c.name.toUpperCase()) : ""}</div>
+         ${c.gift ? `<div class="r-line"><span>Gift card balance</span><span>${money(c.balance)}</span></div>` : ""}
+         ${c.id ? `<div class="r-center">${c.reward ? "🎁 FREE TREAT EARNED!" : `⭐ STARS: ${c.stars} OF ${window.Cards.STARS_FOR_REWARD}`}</div>` : ""}`
       : `<div class="r-line"><span>Cash</span><span>${money(pay.tendered)}</span></div><div class="r-line"><span>Change</span><span>${money(pay.change)}</span></div>`;
     const paper = h(`
       <div class="paper-wrap"><div class="paper">
         <div class="r-shop">${o.shop.emoji} ${o.shop.name.toUpperCase()}</div>
         <div class="r-center">${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</div>
-        <div class="r-center">ORDER #${o.number} · ${o.type.toUpperCase()}${o.name ? "<br>" + o.name.toUpperCase() : ""}</div>
+        <div class="r-center">ORDER #${o.number} · ${o.type.toUpperCase()}${o.name ? "<br>" + esc(o.name.toUpperCase()) : ""}</div>
         <div class="r-rule"></div>
         ${lines}
         <div class="r-rule"></div>
@@ -343,7 +441,7 @@ window.Checkout = (function () {
   function renderThanks(stage) {
     sound("ding");
     stage.appendChild(h(`<div class="pay-emoji">${o.shop.emoji}</div>`));
-    stage.appendChild(h(`<div class="pay-title">Thank you${o.name ? ", " + o.name : ""}!</div>`));
+    stage.appendChild(h(`<div class="pay-title">Thank you${o.name ? ", " + esc(o.name) : ""}!</div>`));
     stage.appendChild(h(`<div class="pay-sub">Your order number is</div>`));
     stage.appendChild(h(`<div class="pay-big order-big">#${o.number}</div>`));
     stage.appendChild(button("Next Customer →", "pay-primary", () => {

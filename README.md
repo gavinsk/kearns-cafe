@@ -32,6 +32,6 @@ Tax rate and the quick-pick customer names are at the top of `app.js`.
 ## Roadmap
 - [x] Phase 1 – Register: shops, menus, options, tax, totals
 - [x] Phase 2 – Square-style customer checkout: tips, tap to pay, cash and change, receipts, sounds
-- [ ] Phase 3 – Printable QR "credit cards", camera scanning, gift-card balances, rewards
+- [x] Phase 3 – Printable QR "credit cards", camera scanning, gift-card balances, rewards
 - [ ] Phase 4 – Two-iPad sync: kitchen tickets, order-up board
 - [ ] Phase 5 – Parent menu editor, sales report, drive-thru, surprise customers

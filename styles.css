@@ -659,3 +659,161 @@ button:disabled { opacity: 0.4; transform: none; }
   .receipt-grid { grid-template-columns: repeat(2, 150px); }
   .pay-title { font-size: 32px; }
 }
+
+/* =====================================================================
+   KEARNS BANK — cards, scanner, printing (cards.js, scanner.js)
+   ===================================================================== */
+.bank-link {
+  margin-top: 36px;
+  padding: 14px 26px;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
+
+#bank { display: flex; flex-direction: column; background: #eef1f8; }
+.bank-bar { background: #1e3a8a; }
+.bank-bar .btn-small { background: rgba(255,255,255,0.18); color: #fff; padding: 12px 16px; font-size: 17px; }
+.bank-bar .bank-new { background: #fff; color: #1e3a8a; }
+.bank-cards {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 22px;
+  align-content: start;
+  justify-items: center;
+}
+.bank-empty { grid-column: 1 / -1; font-size: 22px; color: var(--muted); padding: 60px; }
+.bank-tile { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.bank-info { display: flex; justify-content: space-between; font-size: 18px; padding: 0 4px; }
+.bank-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.bank-actions .btn-small { background: #fff; }
+.bank-actions .bank-del { margin-left: auto; color: #b42318; }
+
+/* The card itself. --u is one "inch": 100px on screen, a real inch when printed */
+.ccard {
+  --u: 100px;
+  width: calc(3.375 * var(--u));
+  height: calc(2.125 * var(--u));
+  border-radius: calc(0.14 * var(--u));
+  background: linear-gradient(135deg, var(--ca), var(--cb));
+  color: #fff;
+  display: flex;
+  padding: calc(0.14 * var(--u));
+  gap: calc(0.1 * var(--u));
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  position: relative;
+  overflow: hidden;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  flex-shrink: 0;
+}
+.ccard::before {
+  content: "";
+  position: absolute;
+  width: 140%; height: 140%;
+  right: -70%; top: -80%;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+.cc-left { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+.cc-bank { font-weight: 900; font-size: calc(0.15 * var(--u)); letter-spacing: 0.08em; }
+.cc-type { font-size: calc(0.1 * var(--u)); font-weight: 700; opacity: 0.9; margin-top: calc(0.02 * var(--u)); }
+.cc-chip {
+  width: calc(0.42 * var(--u));
+  height: calc(0.32 * var(--u));
+  border-radius: calc(0.06 * var(--u));
+  background: linear-gradient(135deg, #f6e27a, #c9a227);
+  margin-top: auto;
+  margin-bottom: calc(0.08 * var(--u));
+}
+.cc-num { font-family: "Courier New", monospace; font-weight: 700; font-size: calc(0.16 * var(--u)); letter-spacing: 0.06em; }
+.cc-name { font-weight: 800; font-size: calc(0.15 * var(--u)); letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc-qr {
+  width: calc(1.5 * var(--u));
+  height: calc(1.5 * var(--u));
+  align-self: center;
+  background: #fff;
+  border-radius: calc(0.08 * var(--u));
+  padding: calc(0.04 * var(--u));
+  position: relative;
+}
+.cc-qr svg { width: 100%; height: 100%; display: block; }
+
+/* New card popup */
+.nc-preview { display: flex; justify-content: center; }
+.nc-row { display: flex; flex-direction: column; align-items: center; }
+.center-chips { justify-content: center; }
+.chip.swatch { width: 52px; height: 40px; padding: 0; border: 3px solid transparent; }
+.chip.swatch.on { border-color: var(--ink); }
+
+/* Camera scanner */
+.scan-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.scan-box {
+  position: relative;
+  width: min(440px, 80vw);
+  aspect-ratio: 4 / 3;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #111;
+}
+.scan-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scan-video.mirror { transform: scaleX(-1); }
+.scan-frame { position: absolute; inset: 18%; pointer-events: none; }
+.scan-frame i { position: absolute; width: 34px; height: 34px; border: 5px solid #fff; }
+.scan-frame i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 10px 0 0 0; }
+.scan-frame i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 10px 0 0; }
+.scan-frame i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 10px; }
+.scan-frame i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 10px 0; }
+.scan-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: #fff;
+  font-size: 18px;
+  text-align: center;
+  background: rgba(0,0,0,0.75);
+}
+.scan-flip { background: #e9e9ee; }
+
+/* Card payment results */
+.tap-zone.declined { background: #c0392b; }
+.tap-zone.declined .ring { display: none; }
+.bad-text { color: #c0392b; }
+.stars { margin-top: 10px; font-size: 28px; letter-spacing: 2px; }
+.stars small { font-size: 18px; letter-spacing: 0; color: var(--muted); }
+.reward {
+  margin-top: 12px;
+  padding: 14px 22px;
+  border-radius: 16px;
+  background: #fff3c4;
+  color: #7a4b00;
+  font-size: 26px;
+  font-weight: 900;
+  animation: pop 0.5s ease-out;
+}
+.reward small { font-size: 17px; font-weight: 600; }
+@keyframes pop { from { transform: scale(0.6); } to { transform: scale(1); } }
+
+/* ---------- Printing: only the cards, at real size ---------- */
+.print-sheet { display: none; }
+@media print {
+  @page { size: letter; margin: 0.5in; }
+  html, body { height: auto; overflow: visible; background: #fff; }
+  body > * { display: none !important; }
+  body > .print-sheet {
+    display: grid !important;
+    grid-template-columns: repeat(2, 3.375in);
+    gap: 0.25in;
+    justify-content: center;
+  }
+  .print-sheet .ccard { --u: 1in; box-shadow: none; break-inside: avoid; outline: 1px dashed #bbb; outline-offset: 0.04in; }
+}
