@@ -255,12 +255,8 @@ window.Kitchen = (function () {
   // Board says the order out loud (iPad voice)
   function sayReady(t, chime) {
     sound(chime || "ding");
-    try {
-      const words = `Order ${t.number}${t.name ? " for " + t.name : ""}, is ready!`;
-      const u = new SpeechSynthesisUtterance(words);
-      u.rate = 0.95;
-      setTimeout(() => window.speechSynthesis.speak(u), 900);
-    } catch (e) { /* no voice available */ }
+    const words = `Order ${t.number}${t.name ? " for " + t.name : ""}, is ready!`;
+    if (window.Voice) setTimeout(() => window.Voice.speak(words), 900);
   }
 
   // ---------- Pop-up message (works on any screen) ----------

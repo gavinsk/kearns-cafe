@@ -10,12 +10,16 @@ window.Surprise = (function () {
     medium: { label: "Medium", lines: [2, 3], qty: [1, 2], options: "some", checkType: true,  patience: 240, hideWords: false },
     hard:   { label: "Hard",   lines: [3, 4], qty: [1, 3], options: "all",  checkType: true,  patience: 120, hideWords: true },
   };
+  // [name, face, voice: "f" = higher voice, "m" = deeper voice, "x" = any, extra voice settings]
   const CUSTOMERS = [
-    ["Captain Pancake", "🧔"], ["Princess Sprinkles", "👸"], ["Mr. Waffles", "👴"], ["Dr. Noodle", "🧑‍⚕️"],
-    ["Grandma Gertie", "👵"], ["Sir Fries-a-Lot", "🤴"], ["Lady Lemonade", "👩‍🦰"], ["Coach Crunch", "🧢"],
-    ["Professor Pickle", "🧑‍🏫"], ["Astronaut Amy", "🧑‍🚀"], ["Farmer Fred", "🧑‍🌾"], ["Detective Donut", "🕵️"],
-    ["Robot 3000", "🤖"], ["Cowboy Carl", "🤠"], ["Wizard Wally", "🧙"], ["Super Sam", "🦸"],
-    ["Baby Bear", "🐻"], ["Chef Charlie", "🧑‍🍳"], ["Firefighter Fran", "🧑‍🚒"], ["Pirate Pete", "🏴‍☠️"],
+    ["Captain Pancake", "🧔", "m"], ["Princess Sprinkles", "👸", "f"], ["Mr. Waffles", "👴", "m", { rate: 0.85 }],
+    ["Dr. Noodle", "🧑‍⚕️", "x"], ["Grandma Gertie", "👵", "f", { rate: 0.85 }], ["Sir Fries-a-Lot", "🤴", "m"],
+    ["Lady Lemonade", "👩‍🦰", "f"], ["Coach Crunch", "🧢", "x", { rate: 1.05 }], ["Professor Pickle", "🧑‍🏫", "x"],
+    ["Astronaut Amy", "🧑‍🚀", "f"], ["Farmer Fred", "🧑‍🌾", "m"], ["Detective Donut", "🕵️", "x", { rate: 0.9 }],
+    ["Robot 3000", "🤖", "x", { pitch: 0.6, rate: 0.85 }], ["Cowboy Carl", "🤠", "m", { rate: 0.88 }],
+    ["Wizard Wally", "🧙", "m", { pitch: 0.8 }], ["Super Sam", "🦸", "x", { rate: 1.05 }],
+    ["Baby Bear", "🐻", "x", { pitch: 1.5 }], ["Chef Charlie", "🧑‍🍳", "x"], ["Firefighter Fran", "🧑‍🚒", "f"],
+    ["Pirate Pete", "🏴‍☠️", "m", { pitch: 0.8 }],
   ];
   const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five"];
   // Option groups that read best in front of the item name ("Spicy Chicken Sandwich")
@@ -80,9 +84,9 @@ window.Surprise = (function () {
       if (same) same.qty += qty;
       else lines.push({ itemId: item.id, choices, qty });
     }
-    const [name, face] = pick(CUSTOMERS);
+    const [name, face, voice, voiceOpts] = pick(CUSTOMERS);
     customer = {
-      name, face, lines,
+      name, face, lines, voice, voiceOpts: voiceOpts || {},
       type: cfg.checkType ? pick(["For Here", "For Here", "To Go", "Drive-Thru"]) : "For Here",
       arrived: Date.now(),
       mistakes: 0,
@@ -155,14 +159,10 @@ window.Surprise = (function () {
     return s;
   }
 
+  // Each customer talks in their own voice (see voice.js)
   function say(text) {
-    if (window.Sound && window.Sound.isMuted()) return;
-    try {
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.92;
-      window.speechSynthesis.speak(u);
-    } catch (e) { /* no voice */ }
+    if (!window.Voice || !customer) return;
+    window.Voice.speak(text, { as: customer.name, gender: customer.voice, ...customer.voiceOpts });
   }
 
   // ---------- Mood (Medium & Hard customers get impatient) ----------

@@ -1092,3 +1092,38 @@ button:disabled { opacity: 0.4; transform: none; }
   45% { transform: rotate(-12deg); } 60% { transform: rotate(10deg); }
   75% { transform: rotate(-5deg); } 100% { transform: rotate(0); }
 }
+
+/* =====================================================================
+   VOICE PICKER (voice.js)
+   ===================================================================== */
+.voice-sheet { max-height: 92vh; }
+.voice-tip {
+  margin: 12px 24px 0;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #fff3c4;
+  color: #5a3d00;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.voice-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 24px; min-height: 120px; }
+.voice-empty { color: var(--muted); padding: 20px 0; font-size: 18px; }
+.voice-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 3px solid transparent;
+  cursor: pointer;
+}
+.voice-row + .voice-row { margin-top: 4px; }
+.voice-row.on { border-color: var(--ok); background: #eaf7ef; }
+.voice-name { flex: 1; font-size: 19px; font-weight: 700; }
+.voice-badge { font-size: 13px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: #eee; color: #555; }
+.voice-badge.q3 { background: #ffd166; color: #5a3d00; }
+.voice-badge.q2 { background: #d6ecff; color: #0b4a85; }
+.voice-lang { font-size: 13px; color: var(--muted); width: 48px; }
+.voice-row .btn-small { width: 48px; }
+.voice-mix { font-size: 15px; }
+.voice-mix.on { background: #eaf7ef; }

@@ -32,6 +32,7 @@
       <button id="btn-kitchen" class="bank-link">👩‍🍳 Kitchen</button>
       <button id="btn-board" class="bank-link">📺 Order Board</button>
       <button id="btn-link" class="bank-link">🔗 Link iPads</button>
+      <button id="btn-voices" class="bank-link">🗣️ Voices</button>
     </div>
   </section>
 
@@ -132,6 +133,25 @@
         <button id="link-unlink" class="btn-secondary hidden">Unlink</button>
         <button id="link-close" class="btn-secondary">Close</button>
         <button id="link-go" class="btn-primary">Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ VOICE PICKER ============ -->
+  <div id="voice-modal" class="modal hidden">
+    <div class="sheet voice-sheet">
+      <div class="sheet-head"><span class="sheet-emoji">🗣️</span><div><div class="sheet-title">Voices</div>
+        <div class="sheet-sub">Tap a voice to use it for announcements. ▶ to hear it.</div></div></div>
+      <div id="voice-tip" class="voice-tip hidden">
+        <b>Want better voices?</b> On this iPad go to <b>Settings → Accessibility → Read &amp; Speak</b>
+        (or <b>Spoken Content</b>) <b>→ Voices → English</b>, and download a few marked
+        <b>Premium</b> or <b>Enhanced</b> (try Ava, Zoe, Evan, or Nathan). Then come back here.
+      </div>
+      <div id="voice-list" class="voice-list"></div>
+      <div class="sheet-foot">
+        <button id="voice-mix" class="btn-secondary voice-mix"></button>
+        <button id="voice-demo" class="btn-secondary">🎲 Try a customer</button>
+        <button id="voice-close" class="btn-primary">Done</button>
       </div>
     </div>
   </div>
@@ -279,6 +299,7 @@
   <script src="vendor/jsQR.js"></script>
   <script src="vendor/peerjs.min.js"></script>
   <script src="sounds.js"></script>
+  <script src="voice.js"></script>
   <script src="scanner.js"></script>
   <script src="cards.js"></script>
   <script src="menus/donuts.js"></script>
