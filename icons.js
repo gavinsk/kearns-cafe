@@ -181,13 +181,42 @@ window.Icons = (function () {
   const LAYERS = {
     lettuce: { h: 10, draw: (y) => P(waveBand(8, 120, y, y + 10, 10, 3), LETTUCE) },
     patty: { h: 18, draw: (y) => R(8, y, 112, 18, 9, PATTY) + shine(`M18 ${y + 5} L40 ${y + 5}`, 3, 0.35) },
-    cheese: { h: 8, draw: (y) => P(`M6 ${y} H122 L117 ${y + 8} H103 L97 ${y + 18} L91 ${y + 8} H62 L55 ${y + 20} L48 ${y + 8} H14 Z`, CHEESE) },
+    cheese: { h: 8, draw: (y) => P(`M6 ${y} H122 L117 ${y + 8} H108 L104 ${y + 20} L99 ${y + 8} H80 L74 ${y + 24} L68 ${y + 8} H50 L44 ${y + 22} L38 ${y + 8} H24 L19 ${y + 16} L15 ${y + 8} Z`, CHEESE) },
     tomato: { h: 9, draw: (y) => R(14, y, 100, 9, 4.5, TOMATO) },
     onion: { h: 7, draw: (y) => R(18, y, 92, 7, 3.5, "#F3E5F5") },
-    bacon: { h: 13, draw: (y) => P(waveBand(0, 128, y, y + 13, 6, 4), "#D9534F") + `<path d="M6 ${y + 8} Q22 ${y + 3} 38 ${y + 8} T70 ${y + 8} T102 ${y + 8} T126 ${y + 8}" stroke="#FFD6DE" stroke-width="3" fill="none"/>` },
+    bacon: { h: 20, draw: (y) =>
+      P(`M-2 ${y + 4} Q-9 ${y + 11} -2 ${y + 20} L12 ${y + 18} L12 ${y + 4} Z`, "#D9534F", OL2) +
+      P(`M130 ${y + 4} Q137 ${y + 11} 130 ${y + 20} L116 ${y + 18} L116 ${y + 4} Z`, "#D9534F", OL2) +
+      P(waveBand(2, 126, y + 2, y + 20, 6, 4), "#D9534F") +
+      `<path d="M6 ${y + 13} Q22 ${y + 8} 38 ${y + 13} T70 ${y + 13} T102 ${y + 13} T124 ${y + 13}" stroke="#FFD6DE" stroke-width="3.5" fill="none"/>` },
     chicken: { h: 20, draw: (y) => P(waveBand(6, 122, y, y + 20, 12, 3), "#E9A23B") + specks(64, y + 11, 52, 6, 24, "#C67A1E", 1.6, 9, false) },
     egg: { h: 18, draw: (y) => P(`M4 ${y + 16} Q8 ${y - 2} 36 ${y + 2} Q64 ${y - 4} 92 ${y + 2} Q122 ${y - 2} 124 ${y + 16} Q64 ${y + 24} 4 ${y + 16} Z`, "#FFFDF5") + E(64, y + 8, 18, 8, "#FFB300", OL2) + shine(`M56 ${y + 5} Q60 ${y + 2} 66 ${y + 3}`, 2.5, 0.8) },
   };
+
+  // Little round "sticker" in the top-right corner: what makes this sandwich different
+  function cornerBadge(kind) {
+    const cx = 103, cy = 25;
+    let b = C(cx, cy, 22, "#FFF8E7", OL);
+    if (kind === "bacon") {
+      // two wavy strips: dark outline, red meat, pink fat stripe
+      const strip = (y) => {
+        const d = `M${cx - 15} ${y} q3.75 -6 7.5 0 t7.5 0 t7.5 0 t7.5 0`;
+        return `<path d="${d}" stroke="${INK}" stroke-width="10" fill="none" stroke-linecap="round"/>` +
+          `<path d="${d}" stroke="#D9534F" stroke-width="6" fill="none" stroke-linecap="round"/>` +
+          `<path d="${d}" stroke="#FFD6DE" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+      };
+      b += strip(cy - 5) + strip(cy + 7);
+    } else if (kind === "cheese") {
+      b += P(`M${cx - 14} ${cy + 10} L${cx + 14} ${cy + 10} L${cx + 14} ${cy - 2} L${cx - 14} ${cy - 12} Z`, CHEESE, OL2);
+      b += C(cx - 4, cy + 3, 3, "#E0A800", "") + C(cx + 7, cy + 4, 2.2, "#E0A800", "") + C(cx + 3, cy - 3, 1.8, "#E0A800", "");
+    } else if (kind === "double") {
+      b += `<text x="${cx}" y="${cy + 8}" font-family="-apple-system, Helvetica, Arial, sans-serif" font-weight="900" font-size="22" text-anchor="middle" fill="#D62828">2×</text>`;
+    } else if (kind === "chicken") {
+      b += `<g transform="rotate(35 ${cx} ${cy})">` + E(cx, cy - 4, 10, 12, "#C9772B", OL2) +
+        R(cx - 2.5, cy + 6, 5, 11, 2, "#FFF3D6", OL2) + C(cx - 3, cy + 18, 3.2, "#FFF3D6", OL2) + C(cx + 3, cy + 18, 3.2, "#FFF3D6", OL2) + `</g>`;
+    }
+    return b;
+  }
 
   // layers: list from bottom to top; bun: { color, top: height of the dome, seeds }
   function burger(layers, opts = {}) {
@@ -220,7 +249,7 @@ window.Icons = (function () {
       const s = (118 - 6) / (118 - highest);
       body = `<g transform="translate(64 118) scale(${n(s * 100) / 100}) translate(-64 -118)">${body}</g>`;
     }
-    return wrap(ground(121, 54) + body);
+    return wrap(ground(121, 54) + body + (opts.badge ? cornerBadge(opts.badge) : ""));
   }
 
   // =====================================================================
@@ -494,14 +523,14 @@ window.Icons = (function () {
     "croissant": () => croissant(),
     // Burgers
     "hamburger": () => burger(["lettuce", "patty", "tomato"]),
-    "cheeseburger": () => burger(["lettuce", "patty", "cheese"]),
-    "double": () => burger(["patty", "cheese", "patty", "cheese"]),
+    "cheeseburger": () => burger(["lettuce", "patty", "cheese"], { badge: "cheese" }),
+    "double": () => burger(["patty", "cheese", "patty", "cheese"], { badge: "double" }),
     "big-barn": () => burger(["lettuce", "tomato", "patty", "cheese", "patty", "cheese", "onion"], { flag: true }),
-    "bacon-burger": () => burger(["lettuce", "patty", "bacon", "cheese"]),
+    "bacon-burger": () => burger(["lettuce", "patty", "cheese", "bacon"], { badge: "bacon" }),
     // Chicken
     "nuggets-6": () => nuggetBox("6"),
     "nuggets-10": () => nuggetBox("10"),
-    "chick-sand": () => burger(["lettuce", "chicken"], { dome: 40 }),
+    "chick-sand": () => burger(["lettuce", "chicken"], { dome: 40, badge: "chicken" }),
     "tenders": () => tenders(),
     // Sides
     "fries": () => fries(),
