@@ -50,6 +50,7 @@ window.Sync = (function () {
   // ---------- Start / stop ----------
   function start(newCode) {
     stop(false);
+    qrEnded = false;
     code = newCode;
     try { localStorage.setItem("kearns.linkCode", code); } catch (e) { /* ignore */ }
     if (!window.Peer) { setStatus("offline"); return; }
@@ -61,13 +62,16 @@ window.Sync = (function () {
     clearTimeout(connectTimer);
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
-    conns.forEach((c) => { try { c.close(); } catch (e) { /* ignore */ } });
+    role = null;           // so closing links below doesn't schedule a reconnect
+    const old = conns;
     conns = [];
+    old.forEach((c) => { try { c.close(); } catch (e) { /* ignore */ } });
     if (peer) { try { peer.destroy(); } catch (e) { /* ignore */ } }
     peer = null;
     role = null;
     if (forget) {
       code = null;
+      qrEnded = false;
       try { localStorage.removeItem("kearns.linkCode"); } catch (e) { /* ignore */ }
     }
     setStatus("off");
@@ -163,9 +167,21 @@ window.Sync = (function () {
       fire("_unlinked", { peerId: conn.peer });
       if (role === "guest") { setStatus("connecting"); retrySoon(); }
       else if (role === "host") setStatus(conns.length ? "linked" : "waiting");
+      else if (role === "qr" && !conns.length) { qrEnded = true; peer = null; role = null; setStatus("off"); }
     };
     conn.on("close", gone);
     conn.on("error", gone);
+  }
+
+  // ---------- QR-code link (qrlink.js): direct over Wi-Fi, no server ----------
+  let qrEnded = false;
+  function attachQr(link) {
+    stop(true);            // a QR link replaces the code link
+    qrEnded = false;
+    peer = link.peer;
+    role = "qr";
+    link.peer.onIncomingCall = (call) => callHandlers.forEach((fn) => fn(call));
+    setupConn(link.conn);
   }
 
   // ---------- Messages ----------
@@ -206,7 +222,10 @@ window.Sync = (function () {
     set("link-dot", dot);
     set("btn-link", status === "off" ? "🔗 Link iPads" : `${dot} ${status === "linked" ? "Linked" : "Linking…"}`);
     const extra = status === "offline" ? ` — trying again in ${waitSeconds < 90 ? waitSeconds + " sec" : Math.round(waitSeconds / 60) + " min"}` : "";
-    set("link-status", `${dot} ${text}${extra}` + (code && status !== "off" ? `  (code ${code})` : ""));
+    let label = `${dot} ${text}${extra}` + (code && status !== "off" ? `  (code ${code})` : "");
+    if (role === "qr" && status === "linked") label += "  (QR link)";
+    if (status === "off" && qrEnded) label = "⚪ The QR link ended — scan the codes again to relink";
+    set("link-status", label);
     const unlink = $("link-unlink");
     if (unlink) unlink.classList.toggle("hidden", status === "off");
   }
@@ -264,7 +283,7 @@ window.Sync = (function () {
   else init();
 
   return {
-    start, stop,
+    start, stop, attachQr,
     status: () => status,
     role: () => role,
     // for intercom.js

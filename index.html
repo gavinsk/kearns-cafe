@@ -183,10 +183,23 @@
       <input id="link-code" class="name-input link-code" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" spellcheck="false">
       <button id="link-new" class="btn-small">🎲 New code</button>
       <div id="link-status" class="link-status"></div>
+      <div class="link-or">— or, with no internet —</div>
+      <button id="link-qr" class="btn-secondary">📷 Link with QR codes</button>
       <div class="sheet-foot">
         <button id="link-unlink" class="btn-secondary hidden">Unlink</button>
         <button id="link-close" class="btn-secondary">Close</button>
         <button id="link-go" class="btn-primary">Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ QR-CODE LINK ============ -->
+  <div id="qrlink-modal" class="modal hidden">
+    <div class="sheet sheet-narrow center">
+      <div class="sheet-title">📷 Link with QR codes</div>
+      <div id="qrlink-body"></div>
+      <div class="sheet-foot">
+        <button id="qrlink-close" class="btn-secondary">Close</button>
       </div>
     </div>
   </div>
@@ -369,6 +382,7 @@
   <script src="surprise.js"></script>
   <script src="app.js"></script>
   <script src="sync.js"></script>
+  <script src="qrlink.js"></script>
   <script src="intercom.js"></script>
 </body>
 </html>

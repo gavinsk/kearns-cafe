@@ -47,6 +47,11 @@ for cash, tap in exactly what they hand you and make change. Slow service on Med
 ## Two iPads: kitchen & order board
 1. On each iPad, tap **🔗 Link iPads** on the start screen, type the **same code** on both, and tap **Link**.
    (Both need internet to find each other. The 🟢 dot in the register's top bar means linked.)
+
+   **No internet?** Tap **📷 Link with QR codes** instead. On the first iPad tap **1️⃣ Show a code**,
+   on the second tap **2️⃣ Scan a code** and point it at the first; then the first iPad scans the
+   reply code. Both must be on the same Wi-Fi. No outside server is used. This link ends when an
+   iPad sleeps or the app closes, so scan the two codes again next time.
 2. One iPad runs the register; the other opens **👩‍🍳 Kitchen** or **📺 Order Board**.
 3. Orders appear in the kitchen as they're paid. Tap **Start → Ready → Picked up**.
    The board announces ready orders, and the register gets a pop-up.
