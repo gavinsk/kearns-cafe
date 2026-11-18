@@ -19,7 +19,10 @@ window.Intercom = (function () {
   let isPost = false;        // this iPad is showing the drive-thru speaker screen
   let postOnline = false;    // (register) the other iPad's speaker screen is open
   let talking = false;
-  let mic = null, ctx = null, gain = null, sendStream = null;
+  let mic = null, ctx = null, gain = null, duck = null, sendStream = null;
+  // How loud our own voice goes out while talking. Kept modest: loud mics + loud speakers
+  // in the same room squeal (feedback). The listener turns it up with the volume control.
+  const TALK = 1.0;
   const calls = {};          // peerId -> outgoing call carrying our voice
   let audioEl = null;
 
@@ -57,7 +60,8 @@ window.Intercom = (function () {
   async function ensureMic() {
     if (sendStream) return true;
     try {
-      mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
+      // autoGainControl off: it keeps boosting the mic, which is what lets feedback build up
+      mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false }, video: false });
     } catch (e) {
       setStatus("🎤 Microphone is blocked. Allow it in Settings to talk.");
       return false;
@@ -68,12 +72,20 @@ window.Intercom = (function () {
     // A light "speaker box" sound that keeps words clear: trim the deepest lows and
     // the very top, with just a touch of grit. (Raise GRIT for more drive-thru crackle.)
     const GRIT = 2;
-    const low = ctx.createBiquadFilter(); low.type = "highpass"; low.frequency.value = 250;
-    const high = ctx.createBiquadFilter(); high.type = "lowpass"; high.frequency.value = 5000;
+    // Trimming the low rumble and the top end also takes away the tones that squeal most.
+    const low = ctx.createBiquadFilter(); low.type = "highpass"; low.frequency.value = 300;
+    const high = ctx.createBiquadFilter(); high.type = "lowpass"; high.frequency.value = 4500;
+    // The grit curve boosts quiet sounds about 3×; cut first so it doesn't add loudness
+    const trim = ctx.createGain(); trim.gain.value = 0.5;
     const crunch = ctx.createWaveShaper(); crunch.curve = distortion(GRIT); crunch.oversample = "4x";
     gain = ctx.createGain(); gain.gain.value = 0;   // silent until the button is held
+    duck = ctx.createGain(); duck.gain.value = 1;   // dips while the other side is talking (see ducking)
+    // A limiter: if a squeal starts anyway, it can't get any louder than this
+    const limit = ctx.createDynamicsCompressor();
+    limit.threshold.value = -18; limit.knee.value = 6; limit.ratio.value = 12;
+    limit.attack.value = 0.003; limit.release.value = 0.15;
     const out = ctx.createMediaStreamDestination();
-    src.connect(low).connect(high).connect(crunch).connect(gain).connect(out);
+    src.connect(low).connect(high).connect(trim).connect(crunch).connect(gain).connect(duck).connect(limit).connect(out);
     sendStream = out.stream;
     return true;
   }
@@ -113,6 +125,47 @@ window.Intercom = (function () {
     } catch (e) { /* ignore */ }
   }
 
+  // ---------- Hearing the other side (with a volume control) ----------
+  // The voice plays through Web Audio so we can set its volume (iPads ignore an
+  // <audio> element's volume) and measure it for ducking.
+  let playCtx = null, playGain = null, playSrc = null, meter = null, duckTimer = null;
+  let volume = 5;   // 0–10
+  try { const v = parseInt(localStorage.getItem("kearns.intercomVolume"), 10); if (v >= 0 && v <= 10) volume = v; } catch (e) { /* ignore */ }
+  const volGain = () => (volume / 10) * 2;   // 5 → 1.0 (normal), 10 → 2.0
+
+  function ensurePlayCtx() {
+    if (playCtx) return playCtx;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    playCtx = new AC();
+    playGain = playCtx.createGain();
+    playGain.gain.value = volGain();
+    meter = playCtx.createAnalyser();
+    meter.fftSize = 512;
+    // (the meter needs to lead somewhere to keep running; this path is silent)
+    const sink = playCtx.createGain(); sink.gain.value = 0;
+    meter.connect(sink).connect(playCtx.destination);
+    playGain.connect(playCtx.destination);
+    return playCtx;
+  }
+
+  function setVolume(v) {
+    volume = Math.max(0, Math.min(10, v));
+    try { localStorage.setItem("kearns.intercomVolume", String(volume)); } catch (e) { /* ignore */ }
+    if (playGain) playGain.gain.setTargetAtTime(volGain(), playCtx.currentTime, 0.05);
+    else if (audioEl) audioEl.volume = Math.min(1, volGain());
+    renderVolume();
+  }
+  function volumeHTML() {
+    return `<div class="vol" aria-label="Volume">
+      <button class="vol-btn" data-vol="-1" aria-label="Quieter">🔈</button>
+      <input class="vol-range" type="range" min="0" max="10" step="1" value="${volume}" aria-label="Volume">
+      <button class="vol-btn" data-vol="1" aria-label="Louder">🔊</button></div>`;
+  }
+  function renderVolume() {
+    document.querySelectorAll(".vol-range").forEach((r) => { if (Number(r.value) !== volume) r.value = volume; });
+  }
+
   // Someone else's voice coming in
   function answer(call) {
     call.answer();   // listen only; our own voice goes out on our own call
@@ -123,12 +176,56 @@ window.Intercom = (function () {
         audioEl.autoplay = true;
         document.body.appendChild(audioEl);
       }
-      audioEl.srcObject = remote;
+      audioEl.srcObject = remote;     // keeps the stream flowing
+      const pc = ensurePlayCtx();
+      let routed = false;
+      if (pc) {
+        try {
+          if (playSrc) { try { playSrc.disconnect(); } catch (e) { /* ignore */ } }
+          playSrc = pc.createMediaStreamSource(remote);
+          playSrc.connect(playGain);
+          playSrc.connect(meter);
+          routed = true;
+          if (pc.state === "suspended") pc.resume().catch(() => {});
+          startDucking();
+        } catch (e) { routed = false; }
+      }
+      audioEl.muted = routed;         // heard through Web Audio instead
+      if (!routed) audioEl.volume = Math.min(1, volGain());
       audioEl.play().catch(() => setStatus("🔈 Tap anywhere to turn on the speaker"));
+      if (pc && pc.state === "suspended") setStatus("🔈 Tap anywhere to turn on the speaker");
     });
   }
   // iPads only play sound after a tap
-  document.addEventListener("pointerdown", () => { if (audioEl && audioEl.paused && audioEl.srcObject) audioEl.play().catch(() => {}); }, { passive: true });
+  document.addEventListener("pointerdown", () => {
+    const pc = ensurePlayCtx();
+    if (pc && pc.state === "suspended") pc.resume().catch(() => {});
+    if (audioEl && audioEl.paused && audioEl.srcObject) audioEl.play().catch(() => {});
+  }, { passive: true });
+
+  // ---------- Ducking ----------
+  // Like a speakerphone: while the other side's voice is coming in, our own mic dips way
+  // down, so their voice coming out of our speaker can't loop straight back to them.
+  const DUCK_LEVEL = 0.15, DUCK_ON = 0.035, DUCK_HOLD = 450;
+  let lastLoud = 0, ducked = false;
+  function startDucking() {
+    if (duckTimer) return;
+    const buf = new Uint8Array(meter.fftSize);
+    duckTimer = setInterval(() => {
+      if (!meter) return;
+      meter.getByteTimeDomainData(buf);
+      let sum = 0;
+      for (let i = 0; i < buf.length; i++) { const x = (buf[i] - 128) / 128; sum += x * x; }
+      const level = Math.sqrt(sum / buf.length);
+      const now = Date.now();
+      if (level > DUCK_ON) lastLoud = now;
+      const want = now - lastLoud < DUCK_HOLD;
+      if (want !== ducked && duck && ctx) {
+        ducked = want;
+        duck.gain.setTargetAtTime(want ? DUCK_LEVEL : 1, ctx.currentTime, want ? 0.01 : 0.12);
+      }
+    }, 50);
+  }
 
   // ---------- Push to talk ----------
   async function startTalk() {
@@ -146,7 +243,7 @@ window.Intercom = (function () {
     ensureCalls();
     if (!talking) return;   // let go while the mic was starting
     sound("radio");
-    gain.gain.setTargetAtTime(1.4, ctx.currentTime, 0.02);
+    gain.gain.setTargetAtTime(TALK, ctx.currentTime, 0.02);
     tell("talk-start");
     setStatus("🎤 Talking… let go when you're done");
   }
@@ -283,7 +380,7 @@ window.Intercom = (function () {
   function isPhone() { return Math.min(screen.width, screen.height) < 600; }
   function registerOpen() { const r = $("register"); return r && !r.classList.contains("hidden"); }
 
-  function openLine(on) { if (gain && ctx) gain.gain.setTargetAtTime(on && !muted ? 1.4 : 0, ctx.currentTime, 0.02); }
+  function openLine(on) { if (gain && ctx) gain.gain.setTargetAtTime(on && !muted ? TALK : 0, ctx.currentTime, 0.02); }
   function startRingLoop(kind) { stopRingLoop(); sound(kind); ringLoop = setInterval(() => sound(kind), kind === "ring" ? 2600 : 4000); }
   function stopRingLoop() { clearInterval(ringLoop); ringLoop = null; }
   function clock() {
@@ -407,6 +504,7 @@ window.Intercom = (function () {
           <button class="pc-mute${muted ? " on" : ""}" id="pc-mute">${muted ? "🎤 Unmute" : "🔇 Mute"}</button>
           <button class="pc-end" id="pc-end">📞 End</button>
         </div>
+        ${volumeHTML()}
         <div class="pc-menu-title">📋 Menu — tell them what you'd like!</div>
         <div class="pc-menu">${m.categories.map((c) => `
           <div class="pc-cat">${esc(c.emoji)} ${esc(c.name)}</div>
@@ -464,6 +562,13 @@ window.Intercom = (function () {
     $("drive-back").onclick = closePost;
     $("drive-car").onclick = () => { sound("honk"); tell("car"); setStatus("🚗 Beep beep! The cashier knows you're here."); };
     wireTalkButton($("drive-talk"));
+    // Volume controls (drive-thru screen, register headset, phone call bar)
+    ["drive-vol", "intercom-vol", "callbar-vol"].forEach((id) => { const el = $(id); if (el) el.innerHTML = volumeHTML(); });
+    document.addEventListener("input", (e) => { if (e.target.classList && e.target.classList.contains("vol-range")) setVolume(Number(e.target.value)); });
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest && e.target.closest(".vol-btn");
+      if (b) setVolume(volume + Number(b.dataset.vol));
+    });
     wireTalkButton($("intercom-talk"));
 
     if (window.Sync) {
@@ -492,5 +597,8 @@ window.Intercom = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 
-  return { openPost, closePost, tellShop, openPhone, isPost: () => isPost, postOnline: () => postOnline, callState: () => callState };
+  return {
+    openPost, closePost, tellShop, openPhone, isPost: () => isPost, postOnline: () => postOnline, callState: () => callState,
+    _debug: () => ({ volume, ducked, playing: !!playSrc, playState: playCtx && playCtx.state, elementMuted: !!(audioEl && audioEl.muted), duckGain: duck && duck.gain.value, talkGain: gain && gain.gain.value }),
+  };
 })();

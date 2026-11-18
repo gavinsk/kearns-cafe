@@ -1483,3 +1483,18 @@ button:disabled { opacity: 0.4; transform: none; }
 .qrlink-scan { margin: 10px auto; max-width: 420px; }
 .qrlink-msg { font-size: 18px; font-weight: 700; margin: 10px 0; min-height: 24px; }
 .qrlink-done { font-size: 34px; font-weight: 900; margin: 18px 0 8px; }
+
+/* ============ INTERCOM / CALL VOLUME ============ */
+.vol { display: flex; align-items: center; gap: 6px; }
+.vol-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.12); color: inherit; font-size: 20px; padding: 0; }
+.vol-range { width: 110px; accent-color: #ffd166; }
+#drive-vol .vol { justify-content: center; margin: 4px 0 10px; }
+#drive-vol .vol-range { width: 160px; }
+#intercom-vol .vol-btn { width: 34px; height: 34px; font-size: 17px; }
+#intercom-vol .vol-range { width: 80px; }
+.callbar .vol-btn { width: 34px; height: 34px; font-size: 16px; background: #374151; }
+.callbar .vol-range { width: 80px; }
+.pc-incall + .pc-controls + .vol, #phonecall .vol { justify-content: center; margin: 4px 0 8px; }
+@media (max-width: 700px) {
+  #intercom-vol .vol-range, .callbar .vol-range { width: 60px; }
+}
