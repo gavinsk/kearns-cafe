@@ -1256,3 +1256,11 @@ button:disabled { opacity: 0.4; transform: none; }
 .item-btn .e .food-ico { width: 72px; height: 72px; }
 .tk-lines .food-ico { width: 1.5em; height: 1.5em; vertical-align: -0.35em; }
 .drag-ghost .food-ico { width: 96px; height: 96px; }
+
+/* Color-coded item tiles: each item's signature color (icons.js) as a thick bottom strip + light tint */
+.item-btn, .shelf-item {
+  border-bottom: 8px solid var(--tag, var(--accent));
+  background: #fff;
+  background: color-mix(in srgb, var(--tag, #ffffff) 12%, #ffffff);
+}
+.shelf-item { --accent: #e6dcc8; }

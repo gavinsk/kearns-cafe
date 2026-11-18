@@ -551,6 +551,34 @@ window.Icons = (function () {
     "kids-nugget": () => kidsMeal(`<g transform="translate(64 42) scale(0.5) translate(-64 -64)">${'<ellipse cx="40" cy="60" rx="19" ry="14" fill="#E9A23B" ' + OL + ' transform="rotate(-20 40 60)"/><ellipse cx="70" cy="52" rx="19" ry="14" fill="#E9A23B" ' + OL + ' transform="rotate(15 70 52)"/><ellipse cx="92" cy="62" rx="17" ry="13" fill="#E9A23B" ' + OL + ' transform="rotate(30 92 62)"/>'}</g>`),
   };
 
+  // =====================================================================
+  //  TILE COLORS: each item's signature color (what makes it special),
+  //  picked so items next to each other on the register look different
+  // =====================================================================
+  const COLORS = {
+    // Donuts: the frosting
+    "glazed": "#E9C27A", "choc-frost": "#5A3420", "sprinkle": "#3BCEAC", "strawberry": "#F48FB1",
+    "boston": "#FFB300", "jelly": "#C2185B", "maple": "#C98A3E", "cinnamon": "#8B4A1C", "dozen": "#F06292",
+    "holes-10": "#FFB74D", "holes-25": "#B98952", "holes-50": "#F06292",
+    // Coffee: hot is brown, cold is blue
+    "hot-coffee": "#8D5A2B", "iced-coffee": "#4FC3F7", "latte": "#D7A86E", "cold-brew": "#1565C0", "frozen": "#9FA8DA",
+    // Drinks
+    "hot-choc": "#D62828", "lemonade": "#FFD54F", "oj": "#FFA726", "milk": "#64B5F6", "water": "#26C6DA",
+    "soda": "#E53935", "juice": "#7CB342", "shake": "#F48FB1",
+    // Breakfast
+    "bagel": "#8D6E63", "egg-sand": "#FFB300", "wrap": "#7CB342", "hash": "#C9852E", "muffin": "#3F51B5", "croissant": "#F2B55E",
+    // Burgers: the special ingredient
+    "hamburger": "#8D5A2B", "cheeseburger": "#FFC83A", "double": "#FF8F00", "big-barn": "#B71C1C", "bacon-burger": "#F06292",
+    // Chicken
+    "nuggets-6": "#F2A900", "nuggets-10": "#E65100", "chick-sand": "#7CB342", "tenders": "#A1673A",
+    // Sides
+    "fries": "#FFD54F", "onion-rings": "#E9A23B", "apples": "#D32F2F", "salad": "#43A047",
+    // Desserts
+    "cone": "#FFE082", "sundae": "#6D4C41", "cookie": "#A1673A", "pie": "#E0A030",
+    // Kids meals
+    "kids-burger": "#D62828", "kids-nugget": "#F2A900",
+  };
+
   // ---------- Public API ----------
   const cache = {};
   function svg(id) {
@@ -570,5 +598,8 @@ window.Icons = (function () {
   }
   function has(id) { return !!RECIPES[id]; }
 
-  return { svg, url, html, has, ids: () => Object.keys(RECIPES) };
+  // Signature color for an item's tile (null = use the shop's normal color)
+  function color(id) { return COLORS[id] || null; }
+
+  return { svg, url, html, has, color, ids: () => Object.keys(RECIPES) };
 })();

@@ -117,6 +117,8 @@
     shop.items.filter((it) => it.cat === category).forEach((it) => {
       const b = document.createElement("button");
       b.className = "item-btn";
+      const tag = window.Icons && window.Icons.color(it.id);
+      if (tag) b.style.setProperty("--tag", tag);
       b.innerHTML = `<span class="e">${pic(it.id, it.emoji)}</span><span class="n">${it.name}</span><span class="p">${money(it.price)}</span>`;
       b.onclick = () => tapItem(it);
       grid.appendChild(b);

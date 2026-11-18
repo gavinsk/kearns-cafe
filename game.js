@@ -160,6 +160,8 @@ window.Game = (function () {
     shelfItems().forEach((item) => {
       const tile = document.createElement("div");
       tile.className = "shelf-item";
+      const tag = window.Icons && window.Icons.color(item.id);
+      if (tag) tile.style.setProperty("--tag", tag);
       tile.innerHTML = `<span class="si-emoji">${pic(item.id, item.emoji)}</span><span class="si-name">${esc(item.name)}</span>`;
       makeDraggable(tile, { name: item.name, emoji: item.emoji, icon: item.id }, "shelf");
       shelf.appendChild(tile);
