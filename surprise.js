@@ -6,9 +6,9 @@ window.Surprise = (function () {
   "use strict";
 
   const LEVELS = {
-    easy:   { label: "Easy",   lines: [1, 2], qty: [1, 2], options: "none", checkType: false, patience: 0,   hideWords: false },
-    medium: { label: "Medium", lines: [2, 3], qty: [1, 2], options: "some", checkType: true,  patience: 240, hideWords: false },
-    hard:   { label: "Hard",   lines: [3, 4], qty: [1, 3], options: "all",  checkType: true,  patience: 120, hideWords: true },
+    easy:   { label: "Easy",   lines: [1, 2], qty: [1, 2], options: "none", checkType: false, patience: 0,   hideWords: false, win: 10, lose: 5 },
+    medium: { label: "Medium", lines: [2, 3], qty: [1, 2], options: "some", checkType: true,  patience: 240, hideWords: false, win: 20, lose: 10 },
+    hard:   { label: "Hard",   lines: [3, 4], qty: [1, 3], options: "all",  checkType: true,  patience: 120, hideWords: true,  win: 30, lose: 15 },
   };
   // [name, face, voice: "f" = higher voice, "m" = deeper voice, "x" = any, extra voice settings]
   const CUSTOMERS = [
@@ -37,7 +37,7 @@ window.Surprise = (function () {
 
   let level = null;          // null = not playing
   let customer = null;       // { name, face, lines, type, sentence, arrived, mistakes }
-  let score = { served: 0, perfect: 0, tips: 0 };
+  let score = { points: 0, served: 0, perfect: 0, tips: 0 };
   let moodTimer = null;
   let peek = false;
 
@@ -230,17 +230,32 @@ window.Surprise = (function () {
     have.forEach((h) => problems.push(`I didn't order a ${h.item.name}!`));
     if (LEVELS[level].checkType && reg.type !== customer.type) problems.push(`I said ${customer.type}!`);
 
+    // The order always goes through — right orders earn points, wrong ones lose some.
+    // Each customer is scored once (on the first Charge), so cancelling and redoing doesn't change it.
+    if (customer.scored) return true;
+    customer.scored = true;
+    const cfg = LEVELS[level];
     if (!problems.length) {
-      if (!customer.mistakes) score.perfect++;
+      score.perfect++;
+      score.points += cfg.win;
       sound("yay");
-      return true;
+      flash(`⭐ +${cfg.win} Perfect order!`);
+    } else {
+      customer.mistakes++;          // a grumpier customer tips less
+      score.points = Math.max(0, score.points - cfg.lose);
+      sound("buzz");
+      const unique = [...new Set(problems)].slice(0, 2);
+      complain(unique.join(" "));
+      say(unique.join(" ") + " Oh well, I'll take it.");
+      flash(`😕 −${cfg.lose}: ${unique.join(" ")}`);
     }
-    customer.mistakes++;
-    sound("buzz");
-    const unique = [...new Set(problems)].slice(0, 2);
-    complain(unique.join(" "));
-    say(unique.join(" "));
-    return false;
+    renderScore();
+    return true;
+  }
+
+  // Pop-up over the payment screen so the cashier sees how they did
+  function flash(text) {
+    if (window.Kitchen) window.Kitchen.toast(text);
   }
 
   function complain(text) {
@@ -297,9 +312,17 @@ window.Surprise = (function () {
   }
 
   // ---------- After the customer leaves ----------
+  function bestKey() { return "kearns.surpriseBest." + level; }
+  function getBest() {
+    try { return Number(localStorage.getItem(bestKey())) || 0; } catch (e) { return 0; }
+  }
+
   function served(payment) {
     score.served++;
     score.tips += payment.tip || 0;
+    if (score.points > getBest()) {
+      try { localStorage.setItem(bestKey(), String(score.points)); } catch (e) { /* ignore */ }
+    }
     customer = null;
     renderScore();
     setTimeout(() => { if (level) newCustomer(); }, 900);
@@ -334,13 +357,14 @@ window.Surprise = (function () {
   }
 
   function renderScore() {
-    $("sb-score").textContent = `😀 ${score.served} served · ⭐ ${score.perfect} perfect · 💰 ${money(score.tips)} tips`;
+    if (!level) return;
+    $("sb-score").innerHTML = `<span class="sb-points">⭐ ${score.points} points</span> · 😀 ${score.served} served · 🎯 ${score.perfect} perfect · 💰 ${money(score.tips)} tips · 🏆 Best ${Math.max(getBest(), score.points)}`;
   }
 
   // ---------- Start / stop ----------
   function start(lvl) {
     level = lvl;
-    score = { served: 0, perfect: 0, tips: 0 };
+    score = { points: 0, served: 0, perfect: 0, tips: 0 };
     $("surprise-modal").classList.add("hidden");
     R().clearOrder();
     clearInterval(moodTimer);

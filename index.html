@@ -77,6 +77,8 @@
     <header class="topbar kitchen-bar">
       <button id="kitchen-back" class="topbar-home" aria-label="Back">←</button>
       <div class="topbar-brand"><span class="brand-emoji">👩‍🍳</span><span class="brand-name">Kitchen</span></div>
+      <span id="kitchen-score" class="score-pill">🏆 0</span>
+      <button id="kitchen-score-reset" class="btn-small score-reset" aria-label="Reset kitchen score">↺</button>
       <button id="kitchen-play" class="btn-small kitchen-play">🧸 Free Play</button>
     </header>
     <div id="kitchen-cols" class="kitchen-cols"></div>
@@ -87,6 +89,7 @@
     <header class="topbar kitchen-bar">
       <button id="build-back" class="topbar-home" aria-label="Back to kitchen">←</button>
       <div class="topbar-brand"><span class="brand-emoji">🍳</span><span class="brand-name">Make the Order</span></div>
+      <span id="build-score" class="score-pill">🏆 0</span>
       <div id="build-shops" class="build-shops"></div>
       <button id="build-easy" class="btn-small build-easy">🐣 Easy shelf</button>
       <button id="build-skip" class="btn-small build-skip">Skip</button>
@@ -262,11 +265,11 @@
   <div id="surprise-modal" class="modal hidden">
     <div class="sheet sheet-narrow center">
       <div class="sheet-title">🎲 Surprise Customers</div>
-      <div class="sheet-sub">Pretend customers walk up and order. Ring it up exactly right, then they pay!</div>
+      <div class="sheet-sub">Pretend customers walk up and order. Ring it up right to earn points — mistakes cost points!</div>
       <div id="surprise-levels" class="surprise-levels">
-        <button data-level="easy" class="level-btn"><b>🐣 Easy</b><span>1–2 plain items</span></button>
-        <button data-level="medium" class="level-btn"><b>🙂 Medium</b><span>Sizes, options, for here or to go</span></button>
-        <button data-level="hard" class="level-btn"><b>🔥 Hard</b><span>Big tricky orders — listen carefully, and don't keep them waiting!</span></button>
+        <button data-level="easy" class="level-btn"><b>🐣 Easy</b><span>1–2 plain items · +10 right, −5 wrong</span></button>
+        <button data-level="medium" class="level-btn"><b>🙂 Medium</b><span>Sizes, options, for here or to go · +20 / −10</span></button>
+        <button data-level="hard" class="level-btn"><b>🔥 Hard</b><span>Big tricky orders — listen carefully, and don't keep them waiting! · +30 / −15</span></button>
       </div>
       <div id="surprise-modal-score" class="sheet-sub"></div>
       <div class="sheet-foot">

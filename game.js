@@ -5,6 +5,8 @@ window.Game = (function () {
   "use strict";
 
   const EASY_EXTRAS = 4;   // in Easy shelf mode: the ticket's items plus this many others
+  const POINTS_RIGHT = 10; // perfect order
+  const POINTS_WRONG = 5;  // taken away for a wrong order (score never goes below 0)
 
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
@@ -16,6 +18,19 @@ window.Game = (function () {
   let tray = [];         // [{ uid, name, emoji }]
   let easy = false;
   try { easy = localStorage.getItem("kearns.easyShelf") === "1"; } catch (e) { /* ignore */ }
+
+  // ---------- Kitchen score (kept on this iPad until reset) ----------
+  function getScore() {
+    try { return Number(localStorage.getItem("kearns.kitchenScore")) || 0; } catch (e) { return 0; }
+  }
+  function setScore(n) {
+    try { localStorage.setItem("kearns.kitchenScore", String(Math.max(0, n))); } catch (e) { /* ignore */ }
+    renderScore();
+  }
+  function renderScore() {
+    const text = `🏆 ${getScore()}`;
+    ["kitchen-score", "build-score"].forEach((id) => { const el = $(id); if (el) el.textContent = text; });
+  }
 
   // ---------- Open / close ----------
   function menuFor(t) {
@@ -33,6 +48,9 @@ window.Game = (function () {
     $("build").classList.remove("hidden");
     $("build-msg").textContent = "";
     $("build-msg").className = "build-msg";
+    $("build-done").disabled = false;
+    $("build-score").classList.toggle("hidden", !ticket);
+    renderScore();
     render();
   }
 
@@ -243,27 +261,34 @@ window.Game = (function () {
     });
     Object.keys(have).forEach((name) => { if (!need[name]) extra.push(name); });
 
+    // Right or wrong, the order goes out — the score shows how well it went
     const msg = $("build-msg");
-    if (!missing.length && !extra.length) {
+    const perfect = !missing.length && !extra.length;
+    if (perfect) {
       sound("yay");
+      setScore(getScore() + POINTS_RIGHT);
       msg.className = "build-msg ok";
-      msg.textContent = "⭐ Order up! Perfect!";
-      const id = ticket.id;
-      setTimeout(() => {
-        if (window.Kitchen) window.Kitchen.markReady(id);
-        close();
-      }, 1400);
-      return;
+      msg.textContent = `⭐ +${POINTS_RIGHT} Perfect! Order up!`;
+    } else {
+      sound("buzz");
+      setScore(getScore() - POINTS_WRONG);
+      msg.className = "build-msg bad";
+      msg.textContent = `😬 −${POINTS_WRONG}: ` + (missing.length ? `forgot ${missing.join(", ")}` : `nobody ordered ${extra.join(", ")}`);
     }
-    sound("buzz");
-    msg.className = "build-msg bad";
-    msg.textContent = missing.length
-      ? `Still need: ${missing.join(", ")}`
-      : `Oops! Nobody ordered: ${extra.join(", ")}`;
+    $("build-done").disabled = true;
+    const id = ticket.id;
+    setTimeout(() => {
+      if (window.Kitchen) window.Kitchen.markReady(id);
+      close();
+    }, perfect ? 1400 : 2600);
   }
 
   // ---------- Wire up ----------
   function init() {
+    renderScore();
+    $("kitchen-score-reset").onclick = () => {
+      if (getScore() === 0 || confirm("Start the kitchen score over at 0?")) setScore(0);
+    };
     $("build-back").onclick = close;
     $("build-done").onclick = check;
     $("build-clear").onclick = () => { tray = []; renderTray(); renderTicket(); };

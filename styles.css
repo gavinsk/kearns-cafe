@@ -1223,3 +1223,18 @@ button:disabled { opacity: 0.4; transform: none; }
   .voice-lang { display: none; }
   .voice-tip { margin: 10px 12px 0; font-size: 14px; }
 }
+
+/* Scores */
+.score-pill {
+  background: #ffd166;
+  color: #3a2200;
+  font-weight: 900;
+  font-size: 20px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.kitchen-bar .kitchen-play { margin-left: 0; }
+.kitchen-bar .score-pill:first-of-type { margin-left: auto; }
+.score-reset { background: rgba(255,255,255,0.15); color: #fff; font-size: 18px; padding: 8px 12px; }
+.sb-points { color: var(--primary); font-weight: 900; }

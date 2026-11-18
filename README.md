@@ -36,7 +36,8 @@ The menu page is built from the same menu files as the register, so it always ma
 ## Surprise Customers
 Tap **🎲** on the register and pick **Easy**, **Medium**, or **Hard**. A pretend customer walks up and says
 their order out loud (🔊 to repeat; on Hard the words stay hidden unless you tap 👀 Peek). Ring it up and tap
-Charge — the customer checks it and complains if something's wrong. Then they tip and pay on their own;
+Charge — a right order earns points (Easy +10, Medium +20, Hard +30); a wrong one loses points (−5/−10/−15)
+and the customer grumbles but still pays. They tip and pay on their own;
 for cash, tap in exactly what they hand you and make change. Slow service on Medium/Hard makes them grumpy
 (and stingy with tips). The score line counts customers served, perfect orders, and tips.
 
@@ -48,7 +49,8 @@ for cash, tap in exactly what they hand you and make change. Slow service on Med
    The board announces ready orders, and the register gets a pop-up.
 
 **Kitchen game:** on a ticket in the Making column, tap **🍳 Make it!** and drag each item from the shelf
-onto the tray, then tap **Done**. Drag an item off the tray to remove it. **🐣 Easy shelf** shows only the
+onto the tray, then tap **Done** — the order goes out either way: perfect is +10 points, wrong is −5 (🏆 score in the
+kitchen header; ↺ resets it). Drag an item off the tray to remove it. **🐣 Easy shelf** shows only the
 ticket's items plus a few extras; **🧸 Free Play** (kitchen header) lets anyone build whatever they like.
 
 Gift card balances and stars sync too. Linking uses PeerJS: its free public server only
