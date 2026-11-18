@@ -71,6 +71,7 @@
   }
 
   function goHome() {
+    if (window.Surprise) window.Surprise.stop();
     store.set("shop", null);
     $("register").classList.add("hidden");
     $("picker").classList.remove("hidden");
@@ -369,6 +370,8 @@
       lines,
       subtotal: cents(t.sub),
       tax: cents(t.tax),
+      // In Surprise Customer mode the pretend customer tips and pays by themselves
+      auto: window.Surprise && window.Surprise.active() ? window.Surprise.payPlan() : null,
       onDone: (payment) => finishOrder(name, num, t, payment, lines),
     });
   }
@@ -396,7 +399,39 @@
     renderTicket();
     renderOrderType();
     renderOrderNumber();
+    if (window.Surprise && window.Surprise.active()) window.Surprise.served(payment);
   }
+
+  // Charge: in Surprise Customer mode, the customer checks the order first
+  function charge() {
+    if (window.Surprise && window.Surprise.active()) {
+      if (!window.Surprise.checkOrder()) return;
+      $("co-name").value = window.Surprise.customerName();
+      startPayment();
+      return;
+    }
+    openCheckout();
+  }
+
+  // Helpers for surprise.js
+  window.Register = {
+    getShop: () => shop,
+    getOrder: () => order,
+    findItem,
+    defaultChoices,
+    describe,
+    refresh() {
+      saveOrder();
+      renderTicket();
+      renderOrderType();
+    },
+    clearOrder() {
+      order = newOrder();
+      saveOrder();
+      renderTicket();
+      renderOrderType();
+    },
+  };
 
   function renderMute() {
     $("btn-mute").textContent = window.Sound.isMuted() ? "🔇" : "🔊";
@@ -416,7 +451,7 @@
       renderTicket();
     }
   };
-  $("btn-charge").onclick = openCheckout;
+  $("btn-charge").onclick = charge;
   document.querySelectorAll("#order-type button").forEach((b) => {
     b.onclick = () => { order.type = b.dataset.type; saveOrder(); renderOrderType(); renderTicket(); };
   });

@@ -1018,3 +1018,67 @@ button:disabled { opacity: 0.4; transform: none; }
 .build-msg.bad { color: #b42318; animation: shake 0.3s; }
 .build-actions { display: flex; gap: 10px; }
 .build-actions .btn-primary { font-size: 26px; padding: 20px; }
+
+/* =====================================================================
+   SURPRISE CUSTOMER (surprise.js)
+   ===================================================================== */
+#btn-surprise.on { background: #fff; }
+.surprise-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 12px 16px 0;
+  padding: 12px 14px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  border: 3px solid var(--accent);
+  flex-shrink: 0;
+}
+.sb-face-wrap { position: relative; }
+.sb-face { font-size: 64px; line-height: 1; display: block; }
+.sb-mood { position: absolute; right: -8px; bottom: -6px; font-size: 28px; }
+.sb-main { flex: 1; min-width: 0; }
+.sb-name { font-size: 18px; font-weight: 800; }
+.sb-level { font-size: 13px; font-weight: 800; color: #fff; background: var(--primary); border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: 2px; }
+.sb-bubble {
+  position: relative;
+  margin-top: 6px;
+  background: #f4f1ea;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.sb-bubble.shake { animation: shake 0.3s 2; }
+.sb-complaint { color: #b42318; font-weight: 800; }
+.sb-hidden { color: var(--muted); }
+.sb-score { margin-top: 6px; font-size: 14px; color: var(--muted); font-weight: 700; }
+.sb-side { display: flex; flex-direction: column; gap: 8px; }
+
+.surprise-levels { display: flex; flex-direction: column; gap: 10px; }
+.level-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: #f4f1ea;
+  text-align: left;
+  border: 3px solid transparent;
+}
+.level-btn b { font-size: 22px; }
+.level-btn span { font-size: 16px; color: var(--muted); }
+.level-btn:active { border-color: var(--primary); }
+
+.auto-given {
+  background: #ffd166;
+  color: #3a2200;
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-size: 22px;
+  font-weight: 700;
+}
+.auto-pick { outline: 5px solid #ffd166; outline-offset: 3px; transform: scale(1.04); }

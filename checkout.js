@@ -78,12 +78,14 @@ window.Checkout = (function () {
     const s = STEPS[step];
     const el = $("pay");
     el.classList.toggle("is-cashier", s.who === "cashier");
-    $("pay-role").textContent = s.who === "cashier" ? "🧑‍💼 Cashier" : "🙂 Customer";
+    $("pay-role").textContent = s.who === "cashier" ? "🧑‍💼 Cashier"
+      : o.auto ? `${o.auto.face} ${o.auto.name}` : "🙂 Customer";
     $("pay-cancel").classList.toggle("hidden", step === "thanks" || step === "receipt");
     const stage = $("pay-stage");
     stage.innerHTML = "";
     stage.className = "pay-stage step-" + step;
     s.render(stage);
+    if (o.auto) autoPlay(step, stage);
   }
 
   function button(label, cls, onClick) {
@@ -270,6 +272,11 @@ window.Checkout = (function () {
   // Step 4: cashier counts the money the customer gave
   function renderCashTender(stage) {
     const due = total();
+    const auto = o.auto;
+    if (auto && !auto.given) auto.given = auto.cashFor(due);
+    if (auto) {
+      stage.appendChild(h(`<div class="auto-given">${auto.face} ${esc(auto.name)} hands you: <b>${esc(auto.describeMoney(auto.given))}</b></div>`));
+    }
     stage.appendChild(h(`<div class="due-row"><span>Total due</span><b>${money(due)}</b></div>`));
     const given = h(`<div class="given"><span>Customer gave</span><b id="given-amt">$0.00</b><small id="given-note"></small></div>`);
     stage.appendChild(given);
@@ -281,7 +288,7 @@ window.Checkout = (function () {
 
     const row = h(`<div class="cash-actions"></div>`);
     row.appendChild(button("Clear", "pay-secondary", () => { pay.tendered = 0; update(); }));
-    row.appendChild(button("Exact amount", "pay-secondary", () => { pay.tendered = due; update(); }));
+    if (!auto) row.appendChild(button("Exact amount", "pay-secondary", () => { pay.tendered = due; update(); }));
     const open = button("Open Drawer 💰", "pay-primary", () => {
       pay.method = "cash";
       pay.change = pay.tendered - due;
@@ -300,6 +307,14 @@ window.Checkout = (function () {
         short > 0 ? `Still need ${money(short)} more` : "That's enough!";
       $("given-note").className = short > 0 ? "" : "ok";
       open.disabled = short > 0;
+      if (auto) {
+        // Must match what the pretend customer actually handed over
+        const right = pay.tendered === auto.given;
+        $("given-note").textContent = pay.tendered === 0 ? "Tap the bills and coins they gave you"
+          : right ? "That's what they gave you!" : pay.tendered > auto.given ? "Too much! Check what they handed you." : "Keep counting…";
+        $("given-note").className = right ? "ok" : "";
+        open.disabled = !right;
+      }
     }
     update();
   }
@@ -435,6 +450,7 @@ window.Checkout = (function () {
       </div></div>`);
     stage.appendChild(paper);
     stage.appendChild(button("Done ✓", "pay-primary", () => show("thanks")));
+    if (o.auto) later(() => show("thanks"), 3500);
   }
 
   // Step 7: thank you
@@ -450,6 +466,24 @@ window.Checkout = (function () {
       close();
       cb(result);
     }));
+  }
+
+  // ---------- Pretend customer (Surprise Customer mode) ----------
+  // Taps the customer's buttons after a short "thinking" pause
+  function autoPlay(step, stage) {
+    const a = o.auto;
+    const tap = (selector, text, ms) => later(() => {
+      const b = [...stage.querySelectorAll(selector)].find((el) => el.textContent.includes(text));
+      if (b) { b.classList.add("auto-pick"); later(() => b.click(), 450); }
+    }, ms);
+    if (step === "tip") tap(".tip-btn", a.tipPct ? a.tipPct + "%" : "No Tip", 1600);
+    if (step === "method") tap(".method-btn", a.method === "card" ? "Card" : "Cash", 1400);
+    if (step === "card") later(() => { const z = stage.querySelector(".tap-zone"); if (z) z.click(); }, 1500);
+    if (step === "cashHandoff") tap(".pay-primary", "cashier", 1800);
+    if (step === "receipt") {
+      const label = { print: "Print", text: "Text", email: "Email", none: "No receipt" }[a.receipt];
+      tap(".receipt-btn", label, 1500);
+    }
   }
 
   // ---------- Cancel ----------

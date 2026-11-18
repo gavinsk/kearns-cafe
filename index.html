@@ -158,12 +158,25 @@
         <div id="order-number" class="order-number"></div>
         <div id="clock" class="clock"></div>
       </div>
+      <button id="btn-surprise" class="topbar-home" aria-label="Surprise customer">🎲</button>
       <button id="link-dot" class="topbar-home link-dot" aria-label="iPad link status">⚪</button>
       <button id="btn-mute" class="topbar-home" aria-label="Sound on or off">🔊</button>
     </header>
 
     <main class="register-body">
       <div class="menu-side">
+        <div id="surprise-bar" class="surprise-bar hidden">
+          <div class="sb-face-wrap"><span id="sb-face" class="sb-face"></span><span id="sb-mood" class="sb-mood"></span></div>
+          <div class="sb-main">
+            <div id="sb-name" class="sb-name"></div>
+            <div id="sb-bubble" class="sb-bubble"></div>
+            <div id="sb-score" class="sb-score"></div>
+          </div>
+          <div class="sb-side">
+            <button id="sb-say" class="btn-small">🔊 Again</button>
+            <button id="sb-peek" class="btn-small hidden">👀 Peek</button>
+          </div>
+        </div>
         <nav id="categories" class="categories"></nav>
         <div id="items" class="items"></div>
       </div>
@@ -225,6 +238,24 @@
     </div>
   </div>
 
+  <!-- ============ SURPRISE CUSTOMER: pick a level ============ -->
+  <div id="surprise-modal" class="modal hidden">
+    <div class="sheet sheet-narrow center">
+      <div class="sheet-title">🎲 Surprise Customers</div>
+      <div class="sheet-sub">Pretend customers walk up and order. Ring it up exactly right, then they pay!</div>
+      <div id="surprise-levels" class="surprise-levels">
+        <button data-level="easy" class="level-btn"><b>🐣 Easy</b><span>1–2 plain items</span></button>
+        <button data-level="medium" class="level-btn"><b>🙂 Medium</b><span>Sizes, options, for here or to go</span></button>
+        <button data-level="hard" class="level-btn"><b>🔥 Hard</b><span>Big tricky orders — listen carefully, and don't keep them waiting!</span></button>
+      </div>
+      <div id="surprise-modal-score" class="sheet-sub"></div>
+      <div class="sheet-foot">
+        <button id="surprise-stop" class="btn-secondary hidden">Stop playing</button>
+        <button id="surprise-close" class="btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ CUSTOMER PAYMENT SCREEN (Square-style) ============ -->
   <section id="pay" class="pay screen hidden">
     <header class="pay-head">
@@ -255,6 +286,7 @@
   <script src="checkout.js"></script>
   <script src="kitchen.js"></script>
   <script src="game.js"></script>
+  <script src="surprise.js"></script>
   <script src="app.js"></script>
   <script src="sync.js"></script>
 </body>

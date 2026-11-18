@@ -33,6 +33,13 @@ Tax rate and the quick-pick customer names are at the top of `app.js`.
 Open `menu.html` (the **🖨️ Menus** button on the start screen) and print, or use `Kearns-Cafe-Menus.pdf`.
 The menu page is built from the same menu files as the register, so it always matches.
 
+## Surprise Customers
+Tap **🎲** on the register and pick **Easy**, **Medium**, or **Hard**. A pretend customer walks up and says
+their order out loud (🔊 to repeat; on Hard the words stay hidden unless you tap 👀 Peek). Ring it up and tap
+Charge — the customer checks it and complains if something's wrong. Then they tip and pay on their own;
+for cash, tap in exactly what they hand you and make change. Slow service on Medium/Hard makes them grumpy
+(and stingy with tips). The score line counts customers served, perfect orders, and tips.
+
 ## Two iPads: kitchen & order board
 1. On each iPad, tap **🔗 Link iPads** on the start screen, type the **same code** on both, and tap **Link**.
    (Both need internet to find each other. The 🟢 dot in the register's top bar means linked.)
