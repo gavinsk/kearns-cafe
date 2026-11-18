@@ -20,6 +20,21 @@ window.Sync = (function () {
   let status = "off";       // off | connecting | waiting | linked | offline
   let retryTimer = null;
   let connectTimer = null;
+  let reconnectTimer = null;
+
+  // Be gentle with the free PeerJS server: every failed attempt waits longer than the
+  // last (it blocks addresses that reconnect too often). Resets once linked.
+  let failures = 0;
+  let nextTryAt = 0;
+  let waitSeconds = 0;
+  function backoff(base, max) {
+    const ms = Math.min(base * Math.pow(2, failures), max);
+    failures++;
+    nextTryAt = Date.now() + ms;
+    waitSeconds = Math.round(ms / 1000);
+    return ms;
+  }
+  function succeeded() { failures = 0; nextTryAt = 0; }
   const handlers = {};      // message type -> [fn]   (e.g. "intercom")
   const callHandlers = [];  // incoming audio calls (intercom)
   function on(type, fn) { (handlers[type] = handlers[type] || []).push(fn); }
@@ -44,6 +59,8 @@ window.Sync = (function () {
   function stop(forget) {
     clearTimeout(retryTimer);
     clearTimeout(connectTimer);
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
     conns.forEach((c) => { try { c.close(); } catch (e) { /* ignore */ } });
     conns = [];
     if (peer) { try { peer.destroy(); } catch (e) { /* ignore */ } }
@@ -60,6 +77,19 @@ window.Sync = (function () {
     clearTimeout(retryTimer);
     retryTimer = setTimeout(() => { if (code) start(code); }, ms);
   }
+  // Server trouble: wait 5s, 10s, 20s… up to 5 minutes
+  function retryOffline() { const ms = backoff(5000, 300000); setStatus("offline"); retry(ms); }
+  // Other iPad not answering: wait 2s, 4s, 8s… up to 1 minute
+  function retrySoon() { retry(backoff(2000, 60000)); }
+
+  // Lost touch with the server (links already made keep working); reconnect later, not instantly
+  function reconnectLater(p) {
+    if (reconnectTimer) return;
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      if (peer === p && p.disconnected && !p.destroyed) { try { p.reconnect(); } catch (e) { /* ignore */ } }
+    }, backoff(5000, 300000));
+  }
 
   // Try to be the host (claim the code's ID). If it's taken, the other iPad is host.
   function tryHost() {
@@ -69,19 +99,21 @@ window.Sync = (function () {
     p.on("open", () => {
       if (peer !== p) return;
       role = "host";
+      succeeded();
       setStatus(conns.length ? "linked" : "waiting");
     });
     p.on("connection", (conn) => setupConn(conn));
     listenForCalls(p);
-    p.on("disconnected", () => { if (peer === p && !p.destroyed) { try { p.reconnect(); } catch (e) { /* ignore */ } } });
+    p.on("disconnected", () => { if (peer === p && !p.destroyed) reconnectLater(p); });
     p.on("error", (err) => {
       if (peer !== p) return;
       if (err.type === "unavailable-id") {
         p.destroy();
         tryGuest();
+      } else if (conns.some((c) => c.open)) {
+        reconnectLater(p);    // still linked directly; just lost the server for now
       } else {
-        setStatus("offline");
-        retry(5000);
+        retryOffline();
       }
     });
   }
@@ -98,13 +130,20 @@ window.Sync = (function () {
       setupConn(conn);
       // If the host never answers (e.g. it's asleep), start over
       clearTimeout(connectTimer);
-      connectTimer = setTimeout(() => { if (!conn.open) retry(1000); }, 10000);
+      connectTimer = setTimeout(() => { if (!conn.open) retrySoon(); }, 10000);
     });
+    p.on("disconnected", () => { if (peer === p && !p.destroyed) reconnectLater(p); });
     p.on("error", (err) => {
       if (peer !== p) return;
-      // Host went away: try to become the host ourselves
-      setStatus(err.type === "peer-unavailable" ? "connecting" : "offline");
-      retry(err.type === "peer-unavailable" ? 1500 : 5000);
+      if (err.type === "peer-unavailable") {
+        // Host went away: try again (maybe becoming the host ourselves) after a pause
+        setStatus("connecting");
+        retrySoon();
+      } else if (conns.some((c) => c.open)) {
+        reconnectLater(p);
+      } else {
+        retryOffline();
+      }
     });
   }
 
@@ -112,6 +151,7 @@ window.Sync = (function () {
     conn.on("open", () => {
       clearTimeout(connectTimer);
       conns.push(conn);
+      succeeded();
       setStatus("linked");
       // Swap everything we know; each side keeps the newest copy
       conn.send({ type: "hello", cards: window.Cards ? window.Cards.all() : {}, tickets: window.Kitchen ? window.Kitchen.all() : {} });
@@ -121,7 +161,7 @@ window.Sync = (function () {
     const gone = () => {
       conns = conns.filter((c) => c !== conn);
       fire("_unlinked", { peerId: conn.peer });
-      if (role === "guest") { setStatus("connecting"); retry(2000); }
+      if (role === "guest") { setStatus("connecting"); retrySoon(); }
       else if (role === "host") setStatus(conns.length ? "linked" : "waiting");
     };
     conn.on("close", gone);
@@ -157,7 +197,7 @@ window.Sync = (function () {
     connecting: ["🟡", "Connecting…"],
     waiting: ["🟡", "Waiting for the other iPad…"],
     linked: ["🟢", "Linked!"],
-    offline: ["🔴", "Can't reach the internet — retrying…"],
+    offline: ["🔴", "Can't reach the link server"],
   };
 
   function renderStatus() {
@@ -165,7 +205,8 @@ window.Sync = (function () {
     const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
     set("link-dot", dot);
     set("btn-link", status === "off" ? "🔗 Link iPads" : `${dot} ${status === "linked" ? "Linked" : "Linking…"}`);
-    set("link-status", `${dot} ${text}` + (code && status !== "off" ? `  (code ${code})` : ""));
+    const extra = status === "offline" ? ` — trying again in ${waitSeconds < 90 ? waitSeconds + " sec" : Math.round(waitSeconds / 60) + " min"}` : "";
+    set("link-status", `${dot} ${text}${extra}` + (code && status !== "off" ? `  (code ${code})` : ""));
     const unlink = $("link-unlink");
     if (unlink) unlink.classList.toggle("hidden", status === "off");
   }
@@ -194,6 +235,7 @@ window.Sync = (function () {
       if (c.length < 4) { $("link-code").focus(); return; }
       $("link-code").value = c;
       $("link-code").blur();
+      succeeded();
       start(c);
     };
     $("link-unlink").onclick = () => stop(true);
@@ -205,12 +247,12 @@ window.Sync = (function () {
 
     // iPads drop connections while asleep; reconnect when the app comes back
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible" && code && status !== "linked") start(code);
+      // Coming back to the app: try now, unless we're still waiting out a backoff
+      if (document.visibilityState === "visible" && code && status !== "linked" && Date.now() >= nextTryAt) start(code);
     });
     setInterval(() => {
       if (!code) return;
-      if (role === "guest" && !conns.some((c) => c.open) && status === "linked") retry(500);
-      if (peer && peer.disconnected && !peer.destroyed) { try { peer.reconnect(); } catch (e) { /* ignore */ } }
+      if (role === "guest" && !conns.some((c) => c.open) && status === "linked") retrySoon();
     }, 10000);
 
     let saved = null;
