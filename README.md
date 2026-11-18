@@ -40,6 +40,10 @@ The menu page is built from the same menu files as the register, so it always ma
 3. Orders appear in the kitchen as they're paid. Tap **Start → Ready → Picked up**.
    The board announces ready orders, and the register gets a pop-up.
 
+**Kitchen game:** on a ticket in the Making column, tap **🍳 Make it!** and drag each item from the shelf
+onto the tray, then tap **Done**. Drag an item off the tray to remove it. **🐣 Easy shelf** shows only the
+ticket's items plus a few extras; **🧸 Free Play** (kitchen header) lets anyone build whatever they like.
+
 Gift card balances and stars sync too. Linking uses PeerJS: its free public server only
 introduces the iPads; orders go directly between them over an encrypted WebRTC link.
 Unlinked, everything still works on a single iPad.

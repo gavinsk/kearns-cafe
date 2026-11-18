@@ -76,8 +76,39 @@
     <header class="topbar kitchen-bar">
       <button id="kitchen-back" class="topbar-home" aria-label="Back">←</button>
       <div class="topbar-brand"><span class="brand-emoji">👩‍🍳</span><span class="brand-name">Kitchen</span></div>
+      <button id="kitchen-play" class="btn-small kitchen-play">🧸 Free Play</button>
     </header>
     <div id="kitchen-cols" class="kitchen-cols"></div>
+  </section>
+
+  <!-- ============ KITCHEN GAME: build the order ============ -->
+  <section id="build" class="screen hidden">
+    <header class="topbar kitchen-bar">
+      <button id="build-back" class="topbar-home" aria-label="Back to kitchen">←</button>
+      <div class="topbar-brand"><span class="brand-emoji">🍳</span><span class="brand-name">Make the Order</span></div>
+      <div id="build-shops" class="build-shops"></div>
+      <button id="build-easy" class="btn-small build-easy">🐣 Easy shelf</button>
+      <button id="build-skip" class="btn-small build-skip">Skip</button>
+    </header>
+    <div class="build-body">
+      <div class="build-left">
+        <div id="build-ticket" class="build-ticket"></div>
+        <nav id="build-cats" class="categories build-cats"></nav>
+        <div id="build-shelf" class="build-shelf"></div>
+      </div>
+      <div class="build-right">
+        <div id="build-tray" class="build-tray">
+          <div class="tray-label">🍽️ Tray</div>
+          <div id="build-tray-hint" class="tray-hint">Drag food here!</div>
+          <div id="build-tray-items" class="tray-items"></div>
+        </div>
+        <div id="build-msg" class="build-msg"></div>
+        <div class="build-actions">
+          <button id="build-clear" class="btn-secondary hidden">Clear</button>
+          <button id="build-done" class="btn-primary">Done! 🔔</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ============ ORDER BOARD ============ -->
@@ -223,6 +254,7 @@
   <script src="menus/burgers.js"></script>
   <script src="checkout.js"></script>
   <script src="kitchen.js"></script>
+  <script src="game.js"></script>
   <script src="app.js"></script>
   <script src="sync.js"></script>
 </body>

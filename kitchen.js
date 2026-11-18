@@ -59,6 +59,7 @@ window.Kitchen = (function () {
   function add(order) {
     put({
       id: deviceId() + "-" + Date.now(),
+      shopId: order.shop.id,
       shopEmoji: order.shop.emoji,
       shopName: order.shop.name,
       number: order.number,
@@ -76,6 +77,14 @@ window.Kitchen = (function () {
     const next = STEPS[Math.min(STEPS.indexOf(t.status) + 1, STEPS.length - 1)];
     t.status = next;
     if (next === "ready") sound("yay");
+    put(t);
+  }
+
+  // Finished in the kitchen game (or skipped)
+  function markReady(id) {
+    const t = load()[id];
+    if (!t || t.status === "ready" || t.status === "done") return;
+    t.status = "ready";
     put(t);
   }
 
@@ -169,11 +178,29 @@ window.Kitchen = (function () {
           <ul class="tk-lines">${(t.lines || []).map((l) => `
             <li><b>${esc(l.qty)}×</b> ${esc(l.emoji)} ${esc(l.name)}${l.mods ? `<small>${esc(l.mods)}</small>` : ""}</li>`).join("")}
           </ul>`;
-        const b = document.createElement("button");
-        b.className = "tk-btn";
-        b.textContent = c.btn;
-        b.onclick = () => advance(t.id);
-        card.appendChild(b);
+        if (c.status === "making" && window.Game) {
+          // Play the kitchen game to finish it (or tap the small ✓ to skip)
+          const row = document.createElement("div");
+          row.className = "tk-row";
+          const make = document.createElement("button");
+          make.className = "tk-btn tk-make";
+          make.textContent = "🍳 Make it!";
+          make.onclick = () => window.Game.open(t);
+          const skip = document.createElement("button");
+          skip.className = "tk-btn tk-skip";
+          skip.textContent = "✓";
+          skip.setAttribute("aria-label", "Mark ready without building");
+          skip.onclick = () => advance(t.id);
+          row.appendChild(make);
+          row.appendChild(skip);
+          card.appendChild(row);
+        } else {
+          const b = document.createElement("button");
+          b.className = "tk-btn";
+          b.textContent = c.btn;
+          b.onclick = () => advance(t.id);
+          card.appendChild(b);
+        }
         body.appendChild(card);
       });
       if (!list.length) body.innerHTML = `<div class="k-empty">No orders</div>`;
@@ -221,10 +248,11 @@ window.Kitchen = (function () {
     $("btn-kitchen").onclick = () => open("kitchen");
     $("btn-board").onclick = () => { open("board"); try { window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); } catch (e) { /* unlock voice */ } };
     $("kitchen-back").onclick = close;
+    $("kitchen-play").onclick = () => { if (window.Game) window.Game.open(null); };
     $("board-back").onclick = close;
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 
-  return { add, advance, all, merge, onChange, toast, open, close, nextNumber };
+  return { add, advance, markReady, all, merge, onChange, toast, open, close, nextNumber };
 })();

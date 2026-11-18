@@ -1,8 +1,8 @@
 // Offline helper. Tries the network first (so menu edits show up right away),
 // and falls back to the saved copy when there's no internet.
-const CACHE = "kearns-cafe-v4";
+const CACHE = "kearns-cafe-v5";
 const FILES = [
-  "./", "index.html", "menu.html", "styles.css", "app.js", "checkout.js", "sounds.js", "cards.js", "scanner.js", "vendor/qrcode.js", "vendor/jsQR.js", "vendor/peerjs.min.js", "kitchen.js", "sync.js",
+  "./", "index.html", "menu.html", "styles.css", "app.js", "checkout.js", "sounds.js", "cards.js", "scanner.js", "vendor/qrcode.js", "vendor/jsQR.js", "vendor/peerjs.min.js", "kitchen.js", "game.js", "sync.js",
   "menus/donuts.js", "menus/burgers.js",
   "manifest.json", "icons/icon.svg", "icons/icon-180.png", "icons/icon-512.png",
 ];
