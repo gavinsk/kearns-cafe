@@ -272,5 +272,7 @@ window.Sync = (function () {
     send: (msg) => send(msg),
     peer: () => peer,
     linkedPeers: () => conns.filter((c) => c.open).map((c) => c.peer),
+    // testing: pretend a message arrived from another device
+    _inject: (msg) => receive(msg, { peer: msg.pid || "test" }),
   };
 })();

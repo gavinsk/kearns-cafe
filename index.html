@@ -135,6 +135,37 @@
     </div>
   </section>
 
+  <!-- ============ PHONE CALL (phones only, intercom.js) ============ -->
+  <section id="phonecall" class="screen hidden">
+    <header class="topbar phone-bar">
+      <button id="pc-back" class="topbar-home" aria-label="Back">←</button>
+      <div class="topbar-brand"><span class="brand-name">📞 Call the Restaurant</span></div>
+    </header>
+    <div id="pc-body" class="pc-body"></div>
+  </section>
+
+  <!-- Register: incoming phone call -->
+  <div id="callin" class="callin hidden">
+    <div class="callin-card">
+      <div class="callin-icon">📞</div>
+      <div class="callin-title">Incoming call</div>
+      <div id="callin-sub" class="callin-sub">Phone order</div>
+      <div class="callin-btns">
+        <button id="callin-decline" class="callin-decline">✕ Decline</button>
+        <button id="callin-answer" class="callin-answer">📞 Answer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Register: on a phone call -->
+  <div id="callbar" class="callbar hidden">
+    <span class="pc-live"></span>
+    <b>📞 On the phone</b>
+    <span id="callbar-time" class="callbar-time">0:00</span>
+    <button id="callbar-mute" class="btn-small">🔇 Mute</button>
+    <button id="callbar-end" class="callbar-end">End</button>
+  </div>
+
   <!-- ============ ORDER BOARD ============ -->
   <section id="board" class="screen hidden">
     <button id="board-back" class="board-back" aria-label="Back">←</button>

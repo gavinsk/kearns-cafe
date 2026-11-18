@@ -60,6 +60,10 @@ ticket's items plus a few extras; **🧸 Free Play** (kitchen header) lets anyon
 **🚗 I'm here!**. The register then shows a **🎧** button — hold it to talk back. Voices get a crackly
 speaker-box sound. Each iPad asks for the microphone the first time someone talks.
 
+**Phone orders:** on a **phone** (linked with the same code), the start screen shows **📞 Call Restaurant**
+instead of Drive-Thru. Pick a shop and it rings the register; the cashier taps **Answer** and you can both
+talk freely (with Mute and End), while the phone shows the menu to order from. Phone orders are set to To Go.
+
 Gift card balances and stars sync too. Linking uses PeerJS: its free public server only
 introduces the iPads; orders go directly between them over an encrypted WebRTC link.
 Unlinked, everything still works on a single iPad.

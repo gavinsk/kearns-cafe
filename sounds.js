@@ -87,6 +87,15 @@ window.Sound = (function () {
     honk() {
       [0, 0.28].forEach((t) => { tone(392, t, 0.2, 0.22, "square"); tone(494, t, 0.2, 0.16, "square"); });
     },
+    // Phone ringing at the restaurant (a quick double trill)
+    ring() {
+      for (let i = 0; i < 14; i++) tone(i % 2 ? 1500 : 1320, i * 0.055, 0.05, 0.16, "sine");
+      for (let i = 0; i < 14; i++) tone(i % 2 ? 1500 : 1320, 1.0 + i * 0.055, 0.05, 0.16, "sine");
+    },
+    // What the caller hears while it rings
+    ringback() { tone(440, 0, 1.6, 0.07, "sine"); tone(480, 0, 1.6, 0.07, "sine"); },
+    pickup() { tone(900, 0, 0.06, 0.15, "square"); tone(1200, 0.07, 0.08, 0.12, "square"); },
+    hangup() { [880, 660, 440].forEach((f, i) => tone(f, i * 0.12, 0.1, 0.15, "sine")); },
     pop()  { tone(600, 0, 0.08, 0.2, "sine"); tone(900, 0.05, 0.1, 0.18, "sine"); },
     yay()  { [784, 988, 1175, 1568].forEach((f, i) => tone(f, i * 0.09, 0.25, 0.2, "triangle")); },
   };

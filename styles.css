@@ -1388,3 +1388,85 @@ button:disabled { opacity: 0.4; transform: none; }
 }
 /* Headset shown but the drive-thru speaker isn't open yet */
 .intercom.waiting .intercom-talk { filter: saturate(0.4); opacity: 0.85; }
+
+/* =====================================================================
+   PRETEND PHONE CALLS (intercom.js)
+   ===================================================================== */
+#phonecall { display: flex; flex-direction: column; background: #111827; color: #fff; }
+.phone-bar { background: #1f2937; }
+.pc-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.pc-title { font-size: 24px; font-weight: 800; margin: 6px 0; }
+.pc-note { background: #374151; border-radius: 14px; padding: 12px 16px; font-size: 16px; text-align: center; max-width: 420px; }
+.pc-shop {
+  width: min(420px, 100%);
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: var(--c);
+  color: #fff;
+  font-size: 20px; font-weight: 800; text-align: left;
+}
+.pc-shop-emoji { font-size: 44px; line-height: 1; }
+.pc-shop span:nth-child(2) { flex: 1; }
+.pc-shop-call { width: 52px; height: 52px; border-radius: 50%; background: #22c55e; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+.pc-avatar {
+  width: 150px; height: 150px; border-radius: 50%;
+  background: var(--c);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 80px; margin-top: 30px;
+  box-shadow: 0 0 0 8px rgba(255,255,255,0.08);
+}
+.pc-avatar.ringing { animation: ringpulse 1.2s infinite; }
+@keyframes ringpulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); } 100% { box-shadow: 0 0 0 30px rgba(34,197,94,0); } }
+.pc-avatar.small { width: 64px; height: 64px; font-size: 36px; margin: 0; }
+.pc-name { font-size: 24px; font-weight: 900; }
+.pc-sub { font-size: 17px; color: #9ca3af; }
+.pc-live { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #22c55e; margin-right: 4px; vertical-align: 1px; animation: livedot 1s infinite alternate; }
+@keyframes livedot { from { opacity: 1; } to { opacity: 0.3; } }
+.pc-end { margin-top: 30px; padding: 16px 40px; border-radius: 999px; background: #ef4444; color: #fff; font-size: 20px; font-weight: 900; }
+.pc-incall { width: min(520px, 100%); display: flex; align-items: center; gap: 14px; }
+.pc-controls { width: min(520px, 100%); display: flex; gap: 10px; }
+.pc-controls .pc-end { margin-top: 0; flex: 1; padding: 14px; }
+.pc-mute { flex: 1; padding: 14px; border-radius: 999px; background: #374151; color: #fff; font-size: 18px; font-weight: 800; }
+.pc-mute.on { background: #f59e0b; color: #111; }
+.pc-menu-title { width: min(520px, 100%); font-size: 17px; font-weight: 800; color: #fcd34d; margin-top: 4px; }
+.pc-menu { width: min(520px, 100%); background: #1f2937; border-radius: 16px; padding: 8px 14px 12px; }
+.pc-cat { font-size: 17px; font-weight: 900; color: #fcd34d; margin: 10px 0 2px; }
+.pc-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 16px; }
+.pc-pic { font-size: 22px; width: 30px; text-align: center; }
+.pc-iname { flex: 1; font-weight: 700; }
+.pc-price { font-weight: 800; color: #fde68a; }
+
+/* Register: incoming call card and on-call bar */
+.callin { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-start; justify-content: center; padding-top: 70px; background: rgba(0,0,0,0.35); }
+.callin-card {
+  width: min(420px, 92vw);
+  background: #111827; color: #fff;
+  border-radius: 26px; padding: 24px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+  animation: pop 0.3s ease-out;
+}
+.callin-icon { font-size: 60px; animation: ringshake 0.5s infinite; display: inline-block; }
+@keyframes ringshake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-14deg); } 75% { transform: rotate(14deg); } }
+.callin-title { font-size: 28px; font-weight: 900; }
+.callin-sub { font-size: 18px; color: #9ca3af; margin: 4px 0 18px; }
+.callin-btns { display: flex; gap: 12px; }
+.callin-btns button { flex: 1; padding: 16px; border-radius: 999px; font-size: 20px; font-weight: 900; color: #fff; }
+.callin-decline { background: #ef4444; }
+.callin-answer { background: #22c55e; }
+.callbar {
+  position: fixed; left: 16px; bottom: 16px;
+  z-index: 55;
+  display: flex; align-items: center; gap: 10px;
+  background: #111827; color: #fff;
+  padding: 8px 10px 8px 16px;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  font-size: 17px;
+  white-space: nowrap;
+}
+.callbar-time { font-variant-numeric: tabular-nums; color: #9ca3af; min-width: 40px; }
+.callbar .btn-small { background: #374151; color: #fff; }
+.callbar .btn-small.on { background: #f59e0b; color: #111; }
+.callbar-end { padding: 10px 16px; border-radius: 999px; background: #ef4444; color: #fff; font-weight: 900; }
