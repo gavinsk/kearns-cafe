@@ -1082,3 +1082,13 @@ button:disabled { opacity: 0.4; transform: none; }
   font-weight: 700;
 }
 .auto-pick { outline: 5px solid #ffd166; outline-offset: 3px; transform: scale(1.04); }
+
+/* Kitchen bell */
+.tk-bell { width: 72px; flex-shrink: 0; background: #ffd166 !important; font-size: 30px; padding: 8px 0; }
+.k-ready .tk-row .tk-btn:last-child { flex: 1; }
+.tk-bell.ringing { animation: bell-shake 0.6s; }
+@keyframes bell-shake {
+  15% { transform: rotate(-18deg); } 30% { transform: rotate(16deg); }
+  45% { transform: rotate(-12deg); } 60% { transform: rotate(10deg); }
+  75% { transform: rotate(-5deg); } 100% { transform: rotate(0); }
+}

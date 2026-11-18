@@ -126,6 +126,8 @@ window.Sync = (function () {
       if (window.Kitchen) window.Kitchen.merge(msg.tickets);
     } else if (msg.type === "card" && msg.card && window.Cards) {
       window.Cards.merge({ [msg.card.id]: msg.card });
+    } else if (msg.type === "bell" && window.Kitchen) {
+      window.Kitchen.rang(msg.info);
     } else if (msg.type === "ticket" && msg.ticket && window.Kitchen) {
       window.Kitchen.merge({ [msg.ticket.id]: msg.ticket });
     }
@@ -187,6 +189,7 @@ window.Sync = (function () {
     // Send our changes to the other iPad as they happen
     if (window.Cards) window.Cards.onChange((card) => send({ type: "card", card }));
     if (window.Kitchen) window.Kitchen.onChange((ticket) => send({ type: "ticket", ticket }));
+    if (window.Kitchen) window.Kitchen.onBell((info) => send({ type: "bell", info }));
 
     // iPads drop connections while asleep; reconnect when the app comes back
     document.addEventListener("visibilitychange", () => {

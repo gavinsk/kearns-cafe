@@ -118,6 +118,25 @@ window.Kitchen = (function () {
     }
   }
 
+  // ---------- The bell ----------
+  const bellListeners = [];   // Sync listens here to ring the other iPad too
+  function onBell(fn) { bellListeners.push(fn); }
+
+  function ring(t) {
+    sound("bell");
+    const info = { id: t.id, number: t.number, name: t.name || "" };
+    bellListeners.forEach((fn) => fn(info));
+  }
+
+  // The other iPad rang the bell
+  function rang(info) {
+    if (!info) return;
+    const msg = `🛎️ Order #${info.number}${info.name ? " for " + info.name : ""} is ready!`;
+    if (view === "board") sayReady(info, "bell");
+    else sound("bell");
+    toast(msg);
+  }
+
   // ---------- Screens ----------
   function open(which) {
     view = which;
@@ -194,6 +213,22 @@ window.Kitchen = (function () {
           row.appendChild(make);
           row.appendChild(skip);
           card.appendChild(row);
+        } else if (c.status === "ready") {
+          // Ring the bell to call the customer, then mark it picked up
+          const row = document.createElement("div");
+          row.className = "tk-row";
+          const bell = document.createElement("button");
+          bell.className = "tk-btn tk-bell";
+          bell.textContent = "🛎️";
+          bell.setAttribute("aria-label", "Ring the bell for this order");
+          bell.onclick = () => { ring(t); bell.classList.remove("ringing"); void bell.offsetWidth; bell.classList.add("ringing"); };
+          const done = document.createElement("button");
+          done.className = "tk-btn";
+          done.textContent = c.btn;
+          done.onclick = () => advance(t.id);
+          row.appendChild(bell);
+          row.appendChild(done);
+          card.appendChild(row);
         } else {
           const b = document.createElement("button");
           b.className = "tk-btn";
@@ -218,8 +253,8 @@ window.Kitchen = (function () {
   }
 
   // Board says the order out loud (iPad voice)
-  function sayReady(t) {
-    sound("ding");
+  function sayReady(t, chime) {
+    sound(chime || "ding");
     try {
       const words = `Order ${t.number}${t.name ? " for " + t.name : ""}, is ready!`;
       const u = new SpeechSynthesisUtterance(words);
@@ -254,5 +289,5 @@ window.Kitchen = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 
-  return { add, advance, markReady, all, merge, onChange, toast, open, close, nextNumber };
+  return { add, advance, markReady, all, merge, onChange, onBell, rang, toast, open, close, nextNumber };
 })();

@@ -73,6 +73,14 @@ window.Sound = (function () {
       tone(2637, 0.24, 0.6, 0.12, "sine");
     },
     ding() { tone(1568, 0, 1.2, 0.3); tone(2093, 0.02, 1.0, 0.15); },
+    // Service-desk bell: "ding-ding"
+    bell() {
+      [0, 0.32].forEach((t) => {
+        tone(2637, t, 1.1, 0.28, "triangle");
+        tone(3951, t + 0.005, 0.7, 0.1, "sine");
+        tone(5274, t + 0.01, 0.35, 0.05, "sine");
+      });
+    },
     pop()  { tone(600, 0, 0.08, 0.2, "sine"); tone(900, 0.05, 0.1, 0.18, "sine"); },
     yay()  { [784, 988, 1175, 1568].forEach((f, i) => tone(f, i * 0.09, 0.25, 0.2, "triangle")); },
   };
