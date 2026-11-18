@@ -1250,3 +1250,9 @@ button:disabled { opacity: 0.4; transform: none; }
   border: 2px solid rgba(255,255,255,0.35);
 }
 .practice-toggle.on { background: #95e6a8; color: #12391f; border-color: #95e6a8; }
+
+/* Drawn food icons (icons.js) — sized by the font size of wherever the emoji used to be */
+.food-ico { width: 1.2em; height: 1.2em; vertical-align: middle; display: inline-block; pointer-events: none; -webkit-user-drag: none; }
+.item-btn .e .food-ico { width: 72px; height: 72px; }
+.tk-lines .food-ico { width: 1.5em; height: 1.5em; vertical-align: -0.35em; }
+.drag-ghost .food-ico { width: 96px; height: 96px; }

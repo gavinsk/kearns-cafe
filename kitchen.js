@@ -65,7 +65,7 @@ window.Kitchen = (function () {
       number: order.number,
       name: order.name,
       type: order.type,
-      lines: order.lines,           // [{ emoji, name, mods, qty }]
+      lines: order.lines,           // [{ emoji, icon, name, mods, qty }]
       status: "new",
       created: Date.now(),
     });
@@ -195,7 +195,7 @@ window.Kitchen = (function () {
           </div>
           <div class="tk-meta">${esc(t.type)} · ${age(t)}</div>
           <ul class="tk-lines">${(t.lines || []).map((l) => `
-            <li><b>${esc(l.qty)}×</b> ${esc(l.emoji)} ${esc(l.name)}${l.mods ? `<small>${esc(l.mods)}</small>` : ""}</li>`).join("")}
+            <li><b>${esc(l.qty)}×</b> ${window.Icons ? window.Icons.html(l.icon, l.emoji) : esc(l.emoji)} ${esc(l.name)}${l.mods ? `<small>${esc(l.mods)}</small>` : ""}</li>`).join("")}
           </ul>`;
         if (c.status === "making" && window.Game) {
           // Play the kitchen game to finish it (or tap the small ✓ to skip)

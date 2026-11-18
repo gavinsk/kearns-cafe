@@ -54,7 +54,7 @@ window.Checkout = (function () {
   function renderSummary() {
     $("pay-lines").innerHTML = o.lines.map((l) => `
       <li>
-        <span class="pl-emoji">${l.emoji}</span>
+        <span class="pl-emoji">${window.Icons ? window.Icons.html(l.icon, l.emoji) : l.emoji}</span>
         <span class="pl-main"><b>${l.qty > 1 ? l.qty + " × " : ""}${l.name}</b>${l.mods ? `<small>${l.mods}</small>` : ""}</span>
         <span class="pl-price">${money(l.amount)}</span>
       </li>`).join("");

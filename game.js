@@ -15,7 +15,8 @@ window.Game = (function () {
   let ticket = null;     // kitchen ticket being built, or null for Free Play
   let menu = null;       // shop menu (from menus/*.js)
   let category = null;
-  let tray = [];         // [{ uid, name, emoji }]
+  let tray = [];         // [{ uid, name, emoji, icon }]
+  const pic = (id, emoji) => (window.Icons ? window.Icons.html(id, emoji) : esc(emoji));
   let easy = false;
   try { easy = localStorage.getItem("kearns.easyShelf") === "1"; } catch (e) { /* ignore */ }
 
@@ -65,7 +66,7 @@ window.Game = (function () {
     // name -> { qty, emoji, mods[] }  (same item on two lines gets added together)
     const map = {};
     (ticket ? ticket.lines : []).forEach((l) => {
-      const n = map[l.name] || (map[l.name] = { qty: 0, emoji: l.emoji, mods: [] });
+      const n = map[l.name] || (map[l.name] = { qty: 0, emoji: l.emoji, icon: l.icon, mods: [] });
       n.qty += Number(l.qty) || 1;
       if (l.mods) n.mods.push(l.mods);
     });
@@ -111,7 +112,7 @@ window.Game = (function () {
       const got = have[name] || 0;
       const done = got >= n.qty;
       return `<li class="${done ? "done" : ""}">
-        <span class="bt-emoji">${esc(n.emoji)}</span>
+        <span class="bt-emoji">${pic(n.icon, n.emoji)}</span>
         <span class="bt-name">${esc(name)}${n.mods.length ? `<small>${esc(n.mods.join(" / "))}</small>` : ""}</span>
         <span class="bt-count">${Math.min(got, 99)}/${n.qty}${done ? " ✓" : ""}</span>
       </li>`;
@@ -159,8 +160,8 @@ window.Game = (function () {
     shelfItems().forEach((item) => {
       const tile = document.createElement("div");
       tile.className = "shelf-item";
-      tile.innerHTML = `<span class="si-emoji">${esc(item.emoji)}</span><span class="si-name">${esc(item.name)}</span>`;
-      makeDraggable(tile, { name: item.name, emoji: item.emoji }, "shelf");
+      tile.innerHTML = `<span class="si-emoji">${pic(item.id, item.emoji)}</span><span class="si-name">${esc(item.name)}</span>`;
+      makeDraggable(tile, { name: item.name, emoji: item.emoji, icon: item.id }, "shelf");
       shelf.appendChild(tile);
     });
   }
@@ -171,7 +172,7 @@ window.Game = (function () {
     tray.forEach((t) => {
       const el = document.createElement("div");
       el.className = "tray-item" + (t.uid === popUid ? " pop" : "");
-      el.innerHTML = `<span class="ti-emoji">${esc(t.emoji)}</span><span class="ti-name">${esc(t.name)}</span>`;
+      el.innerHTML = `<span class="ti-emoji">${pic(t.icon, t.emoji)}</span><span class="ti-name">${esc(t.name)}</span>`;
       makeDraggable(el, t, "tray");
       box.appendChild(el);
     });
@@ -192,7 +193,7 @@ window.Game = (function () {
           if (Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < 6) return;
           ghost = document.createElement("div");
           ghost.className = "drag-ghost";
-          ghost.textContent = item.emoji;
+          ghost.innerHTML = pic(item.icon, item.emoji);
           document.body.appendChild(ghost);
           if (from === "tray") el.classList.add("lifting");
         }
@@ -214,7 +215,7 @@ window.Game = (function () {
         }
         const onTray = ev.type === "pointerup" && overTray(ev);
         if (from === "shelf" && onTray) {
-          const added = { uid: Date.now() + Math.random(), name: item.name, emoji: item.emoji };
+          const added = { uid: Date.now() + Math.random(), name: item.name, emoji: item.emoji, icon: item.icon };
           tray.push(added);
           sound("pop");
           ghost.remove();

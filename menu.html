@@ -49,7 +49,8 @@
     }
     .cat h2 { margin: 0 0 2px; font-size: 20px; color: var(--primary); }
     .item { display: flex; align-items: baseline; gap: 8px; padding: 2px 0; font-size: 15px; }
-    .item .e { width: 24px; text-align: center; font-size: 17px; }
+    .item .e { width: 26px; text-align: center; font-size: 17px; }
+    .item .e .food-ico { width: 24px; height: 24px; vertical-align: -6px; }
     .item .n { font-weight: 700; }
     .item .dots { flex: 1; border-bottom: 2px dotted #c9c3bb; transform: translateY(-4px); min-width: 12px; }
     .item .p { font-weight: 800; }
@@ -77,6 +78,7 @@
 
   <script src="menus/donuts.js"></script>
   <script src="menus/burgers.js"></script>
+  <script src="icons.js"></script>
   <script>
     (function () {
       const money = (n) => "$" + n.toFixed(2);
@@ -118,7 +120,7 @@
             <section class="cat">
               <h2>${c.emoji} ${c.name}</h2>
               ${items.map((i) => `
-                <div class="item"><span class="e">${i.emoji}</span><span class="n">${i.name}</span><span class="dots"></span><span class="p">${money(i.price)}</span></div>`).join("")}
+                <div class="item"><span class="e">${window.Icons ? window.Icons.html(i.id, i.emoji) : i.emoji}</span><span class="n">${i.name}</span><span class="dots"></span><span class="p">${money(i.price)}</span></div>`).join("")}
               ${groups.length ? `<div class="opts">${groups.map((g) => optionLine(m.optionGroups[g])).join("<br>")}</div>` : ""}
             </section>`;
         };

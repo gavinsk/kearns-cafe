@@ -30,6 +30,8 @@
 
   const $ = (id) => document.getElementById(id);
   const money = (n) => "$" + n.toFixed(2);
+  // Picture for a menu item: its drawn icon (icons.js), or the emoji as a fallback
+  const pic = (id, emoji) => (window.Icons ? window.Icons.html(id, emoji) : emoji);
   const round2 = (n) => Math.round(n * 100) / 100;
 
   // ---------- Shop picker ----------
@@ -115,7 +117,7 @@
     shop.items.filter((it) => it.cat === category).forEach((it) => {
       const b = document.createElement("button");
       b.className = "item-btn";
-      b.innerHTML = `<span class="e">${it.emoji}</span><span class="n">${it.name}</span><span class="p">${money(it.price)}</span>`;
+      b.innerHTML = `<span class="e">${pic(it.id, it.emoji)}</span><span class="n">${it.name}</span><span class="p">${money(it.price)}</span>`;
       b.onclick = () => tapItem(it);
       grid.appendChild(b);
     });
@@ -148,7 +150,7 @@
       qty: existing ? existing.qty : 1,
       choices: existing ? JSON.parse(JSON.stringify(existing.choices)) : defaultChoices(item),
     };
-    $("im-emoji").textContent = item.emoji;
+    $("im-emoji").innerHTML = pic(item.id, item.emoji);
     $("im-name").textContent = item.name;
     $("im-base").textContent = money(item.price);
     $("im-add").textContent = existing ? "Update" : "Add to Order";
@@ -279,7 +281,7 @@
       li.className = "line" + (idx === flashIndex ? " flash" : "");
       const mods = describe(item, l.choices);
       li.innerHTML = `
-        <span class="line-emoji">${item.emoji}</span>
+        <span class="line-emoji">${pic(item.id, item.emoji)}</span>
         <div class="line-main">
           <div class="line-name">${item.name}</div>
           ${mods ? `<div class="line-mods">${mods}</div>` : ""}
@@ -355,6 +357,7 @@
       const item = findItem(l.itemId);
       return {
         emoji: item.emoji,
+        icon: item.id,
         name: item.name,
         mods: describe(item, l.choices),
         qty: l.qty,
