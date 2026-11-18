@@ -7,7 +7,14 @@ window.Checkout = (function () {
 
   // ---------- Settings ----------
   const TIP_PERCENTS = [15, 20, 25];
-  const CHANGE_PRACTICE = true;   // cashier has to figure out the change before the app shows it
+  // Change practice: the cashier figures out the change before the app shows it.
+  // Switched on/off from the cash screen; remembered on this iPad (on unless turned off).
+  function changePractice() {
+    try { return localStorage.getItem("kearns.changePractice") !== "0"; } catch (e) { return true; }
+  }
+  function setChangePractice(on) {
+    try { localStorage.setItem("kearns.changePractice", on ? "1" : "0"); } catch (e) { /* ignore */ }
+  }
   const BILLS = [10000, 5000, 2000, 1000, 500, 100];
   const COINS = [25, 10, 5, 1];
   const COIN_NAMES = { 25: "Quarter", 10: "Dime", 5: "Nickel", 1: "Penny" };
@@ -297,6 +304,17 @@ window.Checkout = (function () {
     });
     row.appendChild(open);
     stage.appendChild(row);
+    const practice = button("", "practice-toggle", () => {
+      setChangePractice(!changePractice());
+      labelPractice();
+    });
+    const labelPractice = () => {
+      const on = changePractice();
+      practice.textContent = `🧮 Figure out the change myself: ${on ? "ON" : "OFF"}`;
+      practice.classList.toggle("on", on);
+    };
+    labelPractice();
+    stage.appendChild(practice);
     stage.appendChild(button("← Back", "pay-link", () => { pay.tendered = 0; show("method"); }));
 
     function add(c) { pay.tendered += c; update(); }
@@ -337,7 +355,7 @@ window.Checkout = (function () {
       stage.appendChild(button("Change given · Turn to customer →", "pay-primary", () => show("receipt")));
     };
 
-    if (!CHANGE_PRACTICE) { showAnswer(); return; }
+    if (!changePractice()) { showAnswer(); return; }
 
     let typed = 0;
     let misses = 0;
@@ -378,6 +396,7 @@ window.Checkout = (function () {
       }
     }));
     stage.appendChild(row);
+    stage.appendChild(button("Turn off change practice", "pay-link", () => { setChangePractice(false); showAnswer(); }));
   }
 
   // Which bills and coins to hand back, fewest pieces first

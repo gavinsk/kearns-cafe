@@ -1238,3 +1238,15 @@ button:disabled { opacity: 0.4; transform: none; }
 .kitchen-bar .score-pill:first-of-type { margin-left: auto; }
 .score-reset { background: rgba(255,255,255,0.15); color: #fff; font-size: 18px; padding: 8px 12px; }
 .sb-points { color: var(--primary); font-weight: 900; }
+
+/* Change practice switch (cash screen) */
+.practice-toggle {
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  border: 2px solid rgba(255,255,255,0.35);
+}
+.practice-toggle.on { background: #95e6a8; color: #12391f; border-color: #95e6a8; }
