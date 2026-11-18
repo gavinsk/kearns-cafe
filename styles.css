@@ -1127,3 +1127,99 @@ button:disabled { opacity: 0.4; transform: none; }
 .voice-row .btn-small { width: 48px; }
 .voice-mix { font-size: 15px; }
 .voice-mix.on { background: #eaf7ef; }
+
+/* =====================================================================
+   SCROLLING & PHONES
+   ===================================================================== */
+/* Start screen scrolls when it doesn't fit (auto margins keep it centered when it does) */
+#picker {
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+#picker > :first-child { margin-top: auto; }
+#picker > :last-child { margin-bottom: auto; }
+
+/* Popups scroll too */
+.modal { overflow-y: auto; -webkit-overflow-scrolling: touch; align-items: flex-start; }
+.modal > .sheet { margin: auto; }
+.sheet-narrow { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 700px) {
+  .picker-title { font-size: 40px; text-align: center; }
+  .picker-sub { font-size: 18px; text-align: center; margin-bottom: 20px; }
+  .shop-buttons { gap: 14px; }
+  .shop-btn { width: min(320px, 100%); padding: 18px 14px; }
+  .shop-btn .big { font-size: 64px; }
+  .shop-btn .name { font-size: 24px; }
+  .picker-links { gap: 10px; margin-top: 18px; padding: 0 12px; }
+  .bank-link { font-size: 16px; padding: 12px 18px; }
+
+  .modal { padding: 12px; }
+  .sheet-narrow { padding: 20px 16px; }
+  .sheet-title { font-size: 24px; }
+  .sheet-foot { flex-wrap: wrap; padding: 12px 16px; }
+  .sheet-foot > button { flex: 1 1 auto; }
+
+  /* Register top bar */
+  .topbar { gap: 8px; padding: 8px 10px; }
+  .topbar-home { width: 44px; height: 44px; font-size: 24px; }
+  .order-number { font-size: 16px; }
+  .clock { display: none; }
+  .menu-side { min-height: 0; }
+
+  /* Kearns Bank: buttons wrap instead of overlapping */
+  .bank-bar { flex-wrap: wrap; }
+  .bank-bar .topbar-brand { display: none; }
+  .bank-bar .btn-small { font-size: 15px; padding: 10px 12px; flex: 1 1 auto; }
+  .bank-cards { grid-template-columns: 1fr; padding: 14px 10px; }
+  .ccard { --u: min(100px, calc((100vw - 40px) / 3.375)); }
+
+  /* Kitchen: one long scrolling list of columns */
+  .kitchen-cols { display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .k-col { flex-shrink: 0; }
+  .k-col-body { overflow: visible; }
+  .k-empty { padding: 12px 0; }
+
+  /* Kitchen game: ticket, shelf, then tray, stacked */
+  #build .topbar-brand { display: none; }
+  .build-body { flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 10px; gap: 10px; }
+  .build-left, .build-right { flex: none; min-height: auto; }
+  .build-shelf { overflow: visible; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); grid-auto-rows: 96px; gap: 8px; }
+  .si-emoji { font-size: 40px; }
+  .si-name { font-size: 12px; }
+  .build-tray { min-height: 240px; flex: none; }
+  .bt-lines li { font-size: 17px; }
+  .tray-item { width: 80px; }
+  .ti-emoji { font-size: 38px; }
+
+  /* Payment screens */
+  .pay-head { gap: 8px; padding: 8px 10px; }
+  .pay-shop { font-size: 17px; }
+  .pay-role { font-size: 15px; padding: 8px 12px; }
+  .pay-cancel { font-size: 15px; padding: 10px 12px; }
+  .pay-stage { justify-content: flex-start; padding: 16px 12px; }
+  .pay-title { font-size: 28px; }
+  .pay-big { font-size: 56px; }
+  .tip-grid { grid-template-columns: repeat(2, 1fr); width: 100%; }
+  .method-row { flex-direction: column; width: 100%; align-items: stretch; }
+  .method-btn { width: auto; }
+  .cash-pad { grid-template-columns: repeat(3, 1fr); }
+  .cash-pad .coin-25 { grid-column: auto; }
+  .receipt-grid { grid-template-columns: repeat(2, 1fr); width: 100%; }
+  .pay-primary { min-width: 0; width: 100%; }
+
+  /* Surprise customer banner */
+  .surprise-bar { margin: 8px 10px 0; padding: 10px; gap: 10px; flex-wrap: wrap; }
+  .sb-face { font-size: 44px; }
+  .sb-bubble { font-size: 16px; }
+  .sb-side { flex-direction: row; width: 100%; }
+  .sb-side .btn-small { flex: 1; }
+
+  /* Voices */
+  .voice-list { padding: 8px 12px; }
+  .voice-lang { display: none; }
+  .voice-tip { margin: 10px 12px 0; font-size: 14px; }
+}
