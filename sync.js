@@ -20,6 +20,12 @@ window.Sync = (function () {
   let status = "off";       // off | connecting | waiting | linked | offline
   let retryTimer = null;
   let connectTimer = null;
+  const handlers = {};      // message type -> [fn]   (e.g. "intercom")
+  const callHandlers = [];  // incoming audio calls (intercom)
+  function on(type, fn) { (handlers[type] = handlers[type] || []).push(fn); }
+  function fire(type, msg) { (handlers[type] || []).forEach((fn) => { try { fn(msg); } catch (e) { /* ignore */ } }); }
+  function onCall(fn) { callHandlers.push(fn); }
+  function listenForCalls(p) { p.on("call", (call) => callHandlers.forEach((fn) => fn(call))); }
 
   function setStatus(s) {
     status = s;
@@ -66,6 +72,7 @@ window.Sync = (function () {
       setStatus(conns.length ? "linked" : "waiting");
     });
     p.on("connection", (conn) => setupConn(conn));
+    listenForCalls(p);
     p.on("disconnected", () => { if (peer === p && !p.destroyed) { try { p.reconnect(); } catch (e) { /* ignore */ } } });
     p.on("error", (err) => {
       if (peer !== p) return;
@@ -83,6 +90,7 @@ window.Sync = (function () {
     setStatus("connecting");
     const p = new window.Peer({ debug: 0 });
     peer = p;
+    listenForCalls(p);
     p.on("open", () => {
       if (peer !== p) return;
       role = "guest";
@@ -107,10 +115,12 @@ window.Sync = (function () {
       setStatus("linked");
       // Swap everything we know; each side keeps the newest copy
       conn.send({ type: "hello", cards: window.Cards ? window.Cards.all() : {}, tickets: window.Kitchen ? window.Kitchen.all() : {} });
+      fire("_linked", { peerId: conn.peer });
     });
     conn.on("data", (msg) => receive(msg, conn));
     const gone = () => {
       conns = conns.filter((c) => c !== conn);
+      fire("_unlinked", { peerId: conn.peer });
       if (role === "guest") { setStatus("connecting"); retry(2000); }
       else if (role === "host") setStatus(conns.length ? "linked" : "waiting");
     };
@@ -130,6 +140,8 @@ window.Sync = (function () {
       window.Kitchen.rang(msg.info);
     } else if (msg.type === "ticket" && msg.ticket && window.Kitchen) {
       window.Kitchen.merge({ [msg.ticket.id]: msg.ticket });
+    } else if (handlers[msg.type]) {
+      fire(msg.type, { ...msg, from: from.peer });
     }
     // The host passes changes along in case more than two iPads are linked
     if (role === "host" && msg.type !== "hello") send(msg, from);
@@ -209,5 +221,14 @@ window.Sync = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 
-  return { start, stop, status: () => status, role: () => role };
+  return {
+    start, stop,
+    status: () => status,
+    role: () => role,
+    // for intercom.js
+    on, onCall,
+    send: (msg) => send(msg),
+    peer: () => peer,
+    linkedPeers: () => conns.filter((c) => c.open).map((c) => c.peer),
+  };
 })();

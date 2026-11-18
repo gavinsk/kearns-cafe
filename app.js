@@ -70,6 +70,7 @@
     renderTicket();
     renderOrderType();
     renderOrderNumber();
+    if (window.Intercom) window.Intercom.tellShop();   // drive-thru menu board follows this shop
   }
 
   function goHome() {
@@ -429,6 +430,14 @@
       saveOrder();
       renderTicket();
       renderOrderType();
+    },
+    // Intercom: a car pulled up to the drive-thru
+    setType(type) {
+      if (!order) return;
+      order.type = type;
+      saveOrder();
+      renderOrderType();
+      renderTicket();
     },
     clearOrder() {
       order = newOrder();

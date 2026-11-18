@@ -31,6 +31,7 @@
     <div class="picker-links picker-links-2">
       <button id="btn-kitchen" class="bank-link">👩‍🍳 Kitchen</button>
       <button id="btn-board" class="bank-link">📺 Order Board</button>
+      <button id="btn-drive" class="bank-link">🚗 Drive-Thru</button>
       <button id="btn-link" class="bank-link">🔗 Link iPads</button>
       <button id="btn-voices" class="bank-link">🗣️ Voices</button>
     </div>
@@ -112,6 +113,25 @@
           <button id="build-done" class="btn-primary">Done! 🔔</button>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ DRIVE-THRU SPEAKER (intercom.js) ============ -->
+  <section id="drive" class="screen hidden">
+    <header class="topbar drive-bar">
+      <button id="drive-back" class="topbar-home" aria-label="Back">←</button>
+      <div class="topbar-brand"><span id="drive-shop-name" class="brand-name"></span></div>
+      <div id="drive-shops" class="drive-shops"></div>
+    </header>
+    <div class="drive-body">
+      <div id="drive-board" class="drive-board"></div>
+      <aside class="drive-side">
+        <div id="drive-grille" class="drive-grille" aria-hidden="true"></div>
+        <div id="drive-link" class="drive-link"></div>
+        <button id="drive-talk" class="drive-talk">🎤<span>Hold to Talk</span></button>
+        <div id="drive-status" class="drive-status"></div>
+        <button id="drive-car" class="drive-car">🚗 I'm here!</button>
+      </aside>
     </div>
   </section>
 
@@ -222,6 +242,10 @@
         <button id="btn-charge" class="btn-charge" disabled>Charge $0.00</button>
       </aside>
     </main>
+    <div id="intercom" class="intercom hidden">
+      <button id="intercom-talk" class="intercom-talk" aria-label="Hold to talk to the drive-thru">🎧</button>
+      <div class="intercom-text"><b>Drive-Thru</b><span id="intercom-status">Hold to talk to the drive-thru</span></div>
+    </div>
   </section>
 
   <!-- ============ ITEM OPTIONS POPUP ============ -->
@@ -314,5 +338,6 @@
   <script src="surprise.js"></script>
   <script src="app.js"></script>
   <script src="sync.js"></script>
+  <script src="intercom.js"></script>
 </body>
 </html>

@@ -56,6 +56,10 @@ onto the tray, then tap **Done** — the order goes out either way: perfect is +
 kitchen header; ↺ resets it). Drag an item off the tray to remove it. **🐣 Easy shelf** shows only the
 ticket's items plus a few extras; **🧸 Free Play** (kitchen header) lets anyone build whatever they like.
 
+**Drive-thru intercom:** on the second iPad tap **🚗 Drive-Thru** for a menu board with **🎤 Hold to Talk** and
+**🚗 I'm here!**. The register then shows a **🎧** button — hold it to talk back. Voices get a crackly
+speaker-box sound. Each iPad asks for the microphone the first time someone talks.
+
 Gift card balances and stars sync too. Linking uses PeerJS: its free public server only
 introduces the iPads; orders go directly between them over an encrypted WebRTC link.
 Unlinked, everything still works on a single iPad.

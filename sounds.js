@@ -81,6 +81,12 @@ window.Sound = (function () {
         tone(5274, t + 0.01, 0.35, 0.05, "sine");
       });
     },
+    // Walkie-talkie "kshh" at the start/end of talking
+    radio() { noise(0, 0.13, 0.35); tone(1800, 0, 0.05, 0.06, "square"); },
+    // Car horn: beep beep
+    honk() {
+      [0, 0.28].forEach((t) => { tone(392, t, 0.2, 0.22, "square"); tone(494, t, 0.2, 0.16, "square"); });
+    },
     pop()  { tone(600, 0, 0.08, 0.2, "sine"); tone(900, 0.05, 0.1, 0.18, "sine"); },
     yay()  { [784, 988, 1175, 1568].forEach((f, i) => tone(f, i * 0.09, 0.25, 0.2, "triangle")); },
   };
