@@ -28,11 +28,12 @@ window.Intercom = (function () {
   function received(msg) {
     switch (msg.kind) {
       case "post-on": postOnline = true; renderRegister(); tellShop(); break;
-      case "shop": if (isPost && msg.shopId && window.MENUS[msg.shopId]) { saveDriveShop(msg.shopId); renderBoard(); } break;
+      case "ping": if (isPost) tell("post-on"); break;    // register asking "is a speaker open?" 
+      case "shop": if (isPost) { tell("post-on"); if (msg.shopId && window.MENUS[msg.shopId]) { saveDriveShop(msg.shopId); renderBoard(); } } break;
       case "post-off": postOnline = false; renderRegister(); break;
-      case "talk-start": showRemoteTalking(true, msg.who); sound("radio"); break;
+      case "talk-start": if (msg.who === "post") { postOnline = true; renderRegister(); } showRemoteTalking(true, msg.who); sound("radio"); break;
       case "talk-stop": showRemoteTalking(false, msg.who); sound("radio"); break;
-      case "car": carArrived(); break;
+      case "car": postOnline = true; renderRegister(); carArrived(); break;
     }
   }
 
@@ -48,10 +49,12 @@ window.Intercom = (function () {
     const AC = window.AudioContext || window.webkitAudioContext;
     ctx = new AC();
     const src = ctx.createMediaStreamSource(mic);
-    // Thin, crunchy "speaker box" sound: cut lows and highs, add a little distortion
-    const low = ctx.createBiquadFilter(); low.type = "highpass"; low.frequency.value = 450;
-    const high = ctx.createBiquadFilter(); high.type = "lowpass"; high.frequency.value = 3000;
-    const crunch = ctx.createWaveShaper(); crunch.curve = distortion(18); crunch.oversample = "2x";
+    // A light "speaker box" sound that keeps words clear: trim the deepest lows and
+    // the very top, with just a touch of grit. (Raise GRIT for more drive-thru crackle.)
+    const GRIT = 2;
+    const low = ctx.createBiquadFilter(); low.type = "highpass"; low.frequency.value = 250;
+    const high = ctx.createBiquadFilter(); high.type = "lowpass"; high.frequency.value = 5000;
+    const crunch = ctx.createWaveShaper(); crunch.curve = distortion(GRIT); crunch.oversample = "4x";
     gain = ctx.createGain(); gain.gain.value = 0;   // silent until the button is held
     const out = ctx.createMediaStreamDestination();
     src.connect(low).connect(high).connect(crunch).connect(gain).connect(out);
@@ -114,7 +117,7 @@ window.Intercom = (function () {
     ensureCalls();
     if (!talking) return;   // let go while the mic was starting
     sound("radio");
-    gain.gain.setTargetAtTime(1.8, ctx.currentTime, 0.02);
+    gain.gain.setTargetAtTime(1.4, ctx.currentTime, 0.02);
     tell("talk-start");
     setStatus("🎤 Talking… let go when you're done");
   }
@@ -127,6 +130,7 @@ window.Intercom = (function () {
     tell("talk-stop");
     renderButtons();
     setStatus(isPost ? "Hold the button to talk to the cashier" : "Hold to talk to the drive-thru");
+    renderRegister();
   }
 
   function wireTalkButton(btn) {
@@ -150,9 +154,17 @@ window.Intercom = (function () {
     if (on) setStatus(isPost ? "🔊 The cashier is talking…" : "🔊 The customer is talking…");
     else setStatus(isPost ? "Hold the button to talk to the cashier" : "Hold to talk to the drive-thru");
   }
+  // The register's 🎧 shows whenever the iPads are linked
   function renderRegister() {
     const box = $("intercom");
-    if (box) box.classList.toggle("hidden", !postOnline || isPost);
+    if (!box) return;
+    const linked = !!(window.Sync && window.Sync.linkedPeers().length);
+    box.classList.toggle("hidden", !linked || isPost);
+    box.classList.toggle("waiting", !postOnline);
+    if (!talking && !isPost) {
+      const st = $("intercom-status");
+      if (st) st.textContent = postOnline ? "Hold to talk to the drive-thru" : "Open 🚗 Drive-Thru on the other iPad";
+    }
   }
 
   // A car pulled up: beep beep, pop-up, and switch the register to Drive-Thru
@@ -166,6 +178,7 @@ window.Intercom = (function () {
   function tellShop() {
     const shop = window.Register && window.Register.getShop();
     if (!isPost && shop) tell("shop", { shopId: shop.id });
+    renderRegister();
   }
   function saveDriveShop(id) {
     try { localStorage.setItem("kearns.driveShop", id); } catch (e) { /* ignore */ }
@@ -242,12 +255,15 @@ window.Intercom = (function () {
       // When the link (re)connects, tell the other iPad the speaker is open, and reopen our audio
       window.Sync.on("_linked", () => {
         if (isPost) tell("post-on");
+        else tell("ping");
+        renderRegister();
         if (sendStream) setTimeout(ensureCalls, 800);
         renderLink();
       });
       window.Sync.on("_unlinked", (m) => {
         delete calls[m.peerId];
-        if (window.Sync.linkedPeers().length === 0) { postOnline = false; renderRegister(); }
+        if (window.Sync.linkedPeers().length === 0) postOnline = false;
+        renderRegister();
         renderLink();
       });
     }
