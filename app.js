@@ -70,6 +70,7 @@
     renderTicket();
     renderOrderType();
     renderOrderNumber();
+    renderPickups();
     if (window.Intercom) window.Intercom.tellShop();   // drive-thru menu board follows this shop
   }
 
@@ -333,6 +334,13 @@
   // ---------- Checkout (simple for Phase 1) ----------
   function openCheckout() {
     $("co-name").value = "";
+    $("co-name").placeholder = "Type a name";
+    // Phone orders: the customer can't tap to pay over the phone, so offer Pay at Pickup
+    const phone = order.type === "Phone";
+    $("co-later").classList.toggle("hidden", !phone);
+    $("co-later-note").classList.toggle("hidden", !phone);
+    $("co-pay").className = phone ? "btn-secondary" : "btn-primary";
+    $("co-pay").textContent = phone ? "Pay now" : "Turn to Customer →";
     $("co-total").textContent = money(totals().total);
     const quick = $("co-quick");
     quick.innerHTML = "";
@@ -346,17 +354,9 @@
     $("checkout-modal").classList.remove("hidden");
   }
 
-  // Hand off to the Square-style customer screen (checkout.js)
-  function startPayment() {
-    const name = $("co-name").value.trim();
-    const num = currentOrderNumber();
-    const t = totals();
-    const cents = (n) => Math.round(n * 100);
-
-    $("checkout-modal").classList.add("hidden");
-    $("co-name").blur();
-
-    const lines = order.lines.map((l) => {
+  const cents = (n) => Math.round(n * 100);
+  function ticketLines() {
+    return order.lines.map((l) => {
       const item = findItem(l.itemId);
       return {
         emoji: item.emoji,
@@ -367,6 +367,18 @@
         amount: cents(unitPrice(item, l.choices) * l.qty),
       };
     });
+  }
+
+  // Hand off to the Square-style customer screen (checkout.js)
+  function startPayment() {
+    const name = $("co-name").value.trim();
+    const num = currentOrderNumber();
+    const t = totals();
+
+    $("checkout-modal").classList.add("hidden");
+    $("co-name").blur();
+
+    const lines = ticketLines();
 
     window.Checkout.start({
       shop,
@@ -382,22 +394,18 @@
     });
   }
 
-  function finishOrder(name, num, t, payment, lines) {
+  function finishOrder(name, num, t, payment, lines, later) {
     // Send a ticket to the kitchen (and to the other iPad, if linked)
-    if (window.Kitchen) window.Kitchen.add({ shop, number: num, name, type: order.type, lines });
+    if (window.Kitchen) {
+      window.Kitchen.add({
+        shop, number: num, name, type: order.type, lines,
+        ...(later ? { unpaid: true, bill: { subtotal: cents(t.sub), tax: cents(t.tax) } } : {}),
+      });
+    }
 
-    const history = store.get("history", []);
-    history.push({
-      shop: shop.id,
-      number: num,
-      name,
-      type: order.type,
-      lines: order.lines,
-      ...t,
-      payment,
-      time: new Date().toISOString(),
-    });
-    store.set("history", history.slice(-500));
+    if (!later) {
+      logSale({ shop: shop.id, number: num, name, type: order.type, lines: order.lines, ...t, payment });
+    }
     store.set("orderNum", num >= 999 ? 1 : num + 1);
 
     order = newOrder();
@@ -406,6 +414,95 @@
     renderOrderType();
     renderOrderNumber();
     if (window.Surprise && window.Surprise.active()) window.Surprise.served(payment);
+  }
+
+  function logSale(entry) {
+    const history = store.get("history", []);
+    history.push({ ...entry, time: new Date().toISOString() });
+    store.set("history", history.slice(-500));
+  }
+
+  // ---------- Pay at pickup (phone orders) ----------
+  // The caller isn't standing at the register, so the order goes to the kitchen now
+  // and gets paid when they come to pick it up.
+  function payLater() {
+    const name = $("co-name").value.trim();
+    if (!name) {
+      $("co-name").focus();
+      $("co-name").placeholder = "Who's picking it up?";
+      if (window.Sound) window.Sound.buzz();
+      return;
+    }
+    const num = currentOrderNumber();
+    const t = totals();
+    $("checkout-modal").classList.add("hidden");
+    $("co-name").blur();
+    finishOrder(name, num, t, null, ticketLines(), true);
+    if (window.Sound) window.Sound.ding();
+    if (window.Kitchen) window.Kitchen.toast(`🛍️ Order #${num} for ${name} will pay at pickup (${money(t.total)})`);
+  }
+
+  function renderPickups() {
+    const btn = $("btn-pickups");
+    if (!btn || !shop || !window.Kitchen) return;
+    const list = window.Kitchen.unpaid(shop.id);
+    btn.classList.toggle("hidden", list.length === 0);
+    $("pickups-count").textContent = list.length;
+    if (!$("pickups-modal").classList.contains("hidden")) renderPickupList(list);
+  }
+
+  const STATUS_WORDS = { new: "🆕 New", making: "🔥 Being made", ready: "✅ Ready", done: "👋 Picked up" };
+  function renderPickupList(list) {
+    const box = $("pickups-list");
+    box.innerHTML = "";
+    if (!list.length) { box.innerHTML = `<div class="k-empty">Nobody is waiting to pay. 🎉</div>`; return; }
+    list.forEach((tk) => {
+      const total = ((tk.bill ? tk.bill.subtotal + tk.bill.tax : 0) / 100);
+      const row = document.createElement("div");
+      row.className = "pickup-row";
+      row.innerHTML = `
+        <div class="pickup-num">#${tk.number}</div>
+        <div class="pickup-info"><b></b><span>${STATUS_WORDS[tk.status] || ""} · ${itemCount(tk)}</span></div>
+        <div class="pickup-total">${money(total)}</div>`;
+      row.querySelector("b").textContent = tk.name || "Customer";
+      const pay = document.createElement("button");
+      pay.className = "btn-primary pickup-pay";
+      pay.textContent = "💳 Pay";
+      pay.onclick = () => collect(tk);
+      row.appendChild(pay);
+      box.appendChild(row);
+    });
+  }
+
+  function itemCount(tk) {
+    const n = (tk.lines || []).reduce((sum, l) => sum + (l.qty || 1), 0);
+    return n + (n === 1 ? " item" : " items");
+  }
+
+  function openPickups() {
+    renderPickupList(window.Kitchen.unpaid(shop.id));
+    $("pickups-modal").classList.remove("hidden");
+  }
+
+  // The customer is here: run the normal customer payment screens for their order
+  function collect(tk) {
+    $("pickups-modal").classList.add("hidden");
+    const bill = tk.bill || { subtotal: 0, tax: 0 };
+    window.Checkout.start({
+      shop: window.MENUS[tk.shopId] || shop,
+      number: tk.number,
+      name: tk.name,
+      type: tk.type,
+      lines: tk.lines || [],
+      subtotal: bill.subtotal,
+      tax: bill.tax,
+      onDone: (payment) => {
+        window.Kitchen.markPaid(tk.id);
+        const sub = bill.subtotal / 100, tax = bill.tax / 100;
+        logSale({ shop: tk.shopId, number: tk.number, name: tk.name, type: tk.type, lines: tk.lines, sub, tax, total: round2(sub + tax), payment, pickup: true });
+        renderPickups();
+      },
+    });
   }
 
   // Charge: in Surprise Customer mode, the customer checks the order first
@@ -488,8 +585,12 @@
 
   $("co-cancel").onclick = () => $("checkout-modal").classList.add("hidden");
   $("co-pay").onclick = startPayment;
-  $("co-name").onkeydown = (e) => { if (e.key === "Enter") startPayment(); };
-  document.addEventListener("kearns:tickets", () => { if (shop) renderOrderNumber(); });
+  $("co-later").onclick = payLater;
+  $("co-name").onkeydown = (e) => { if (e.key === "Enter") (order.type === "Phone" ? payLater : startPayment)(); };
+  $("btn-pickups").onclick = openPickups;
+  $("pickups-close").onclick = () => $("pickups-modal").classList.add("hidden");
+  document.addEventListener("kearns:tickets", () => { if (shop) { renderOrderNumber(); renderPickups(); } });
+  if (window.Kitchen) window.Kitchen.onChange(() => { if (shop) renderPickups(); });
   $("btn-mute").onclick = () => { window.Sound.setMuted(!window.Sound.isMuted()); renderMute(); };
   renderMute();
 

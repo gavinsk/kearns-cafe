@@ -68,6 +68,10 @@ speaker-box sound. Each iPad asks for the microphone the first time someone talk
 **Phone orders:** on a **phone** (linked with the same code), the start screen shows **📞 Call Restaurant**
 instead of Drive-Thru. Pick a shop and it rings the register; the cashier taps **Answer** and you can both
 talk freely (with Mute and End), while the phone shows the menu to order from. Phone orders are set to To Go.
+Phone calls switch the order to **📞 Phone**. When you tap Charge, choose **🛍️ Pay at Pickup**: the
+order goes to the kitchen marked "💵 Pays at pickup", and a **🛍️** button with a count appears at the
+top of the register. When the customer arrives, tap 🛍️ and then **💳 Pay** to run the normal payment
+screens. (You can also tap 📞 Phone yourself for pretend calls without a phone.)
 
 Gift card balances and stars sync too. Linking uses PeerJS: its free public server only
 introduces the iPads; orders go directly between them over an encrypted WebRTC link.

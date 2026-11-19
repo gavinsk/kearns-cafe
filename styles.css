@@ -1498,3 +1498,21 @@ button:disabled { opacity: 0.4; transform: none; }
 @media (max-width: 700px) {
   #intercom-vol .vol-range, .callbar .vol-range { width: 60px; }
 }
+
+/* ============ PAY AT PICKUP (phone orders) ============ */
+.pickups-btn { position: relative; }
+.pickups-count {
+  position: absolute; top: -4px; right: -4px;
+  min-width: 22px; height: 22px; padding: 0 5px; border-radius: 11px;
+  background: #ffd166; color: #3a2200; font-size: 13px; font-weight: 900; line-height: 22px; text-align: center;
+}
+.co-later-note { text-align: center; font-weight: 700; color: #8a5a00; background: #fff4d6; border-radius: 12px; padding: 8px 12px; margin-top: 10px; }
+.pickups-list { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; max-height: 55vh; overflow-y: auto; }
+.pickup-row { display: flex; align-items: center; gap: 12px; background: #f6f1ea; border-radius: 14px; padding: 10px 12px; }
+.pickup-num { font-size: 24px; font-weight: 900; min-width: 56px; }
+.pickup-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.pickup-info b { font-size: 19px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pickup-info span { font-size: 14px; color: #7a6a5a; }
+.pickup-total { font-size: 20px; font-weight: 800; }
+.pickup-pay { padding: 10px 16px; font-size: 18px; }
+.tk-unpaid { display: inline-block; margin: 4px 0 2px; padding: 3px 10px; border-radius: 999px; background: #fff4d6; color: #8a5a00; font-weight: 800; font-size: 14px; }

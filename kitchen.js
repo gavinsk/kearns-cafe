@@ -23,7 +23,7 @@ window.Kitchen = (function () {
   function save(all) {
     // Forget finished tickets after a while so the list doesn't grow forever
     const cutoff = Date.now() - KEEP_DONE_MINUTES * 60000;
-    Object.values(all).forEach((t) => { if (t.status === "done" && t.updated < cutoff) delete all[t.id]; });
+    Object.values(all).forEach((t) => { if (t.status === "done" && !t.unpaid && t.updated < cutoff) delete all[t.id]; });
     try { localStorage.setItem("kearns.tickets", JSON.stringify(all)); } catch (e) { /* ignore */ }
   }
   function all() { return load(); }
@@ -65,7 +65,8 @@ window.Kitchen = (function () {
       number: order.number,
       name: order.name,
       type: order.type,
-      lines: order.lines,           // [{ emoji, icon, name, mods, qty }]
+      lines: order.lines,           // [{ emoji, icon, name, mods, qty, amount }]
+      ...(order.unpaid ? { unpaid: true, bill: order.bill } : {}),   // phone order: pays at pickup
       status: "new",
       created: Date.now(),
     });
@@ -78,6 +79,19 @@ window.Kitchen = (function () {
     t.status = next;
     if (next === "ready") sound("yay");
     put(t);
+  }
+
+  // A pay-at-pickup order got paid at the register
+  function markPaid(id) {
+    const t = load()[id];
+    if (!t || !t.unpaid) return;
+    t.unpaid = false;
+    t.paidAt = Date.now();
+    put(t);
+  }
+  // Orders still waiting to pay (for one shop, or all)
+  function unpaid(shopId) {
+    return Object.values(load()).filter((t) => t.unpaid && (!shopId || t.shopId === shopId)).sort((a, b) => a.created - b.created);
   }
 
   // Finished in the kitchen game (or skipped)
@@ -194,6 +208,7 @@ window.Kitchen = (function () {
             <span class="tk-shop">${esc(t.shopEmoji)}</span>
           </div>
           <div class="tk-meta">${esc(t.type)} · ${age(t)}</div>
+          ${t.unpaid ? `<div class="tk-unpaid">💵 Pays at pickup</div>` : ""}
           <ul class="tk-lines">${(t.lines || []).map((l) => `
             <li><b>${esc(l.qty)}×</b> ${window.Icons ? window.Icons.html(l.icon, l.emoji) : esc(l.emoji)} ${esc(l.name)}${l.mods ? `<small>${esc(l.mods)}</small>` : ""}</li>`).join("")}
           </ul>`;
@@ -225,7 +240,10 @@ window.Kitchen = (function () {
           const done = document.createElement("button");
           done.className = "tk-btn";
           done.textContent = c.btn;
-          done.onclick = () => advance(t.id);
+          done.onclick = () => {
+            if (t.unpaid) toast(`💵 Order #${t.number}${t.name ? " for " + t.name : ""} still needs to pay at the register (🛍️)`);
+            advance(t.id);
+          };
           row.appendChild(bell);
           row.appendChild(done);
           card.appendChild(row);
@@ -245,7 +263,7 @@ window.Kitchen = (function () {
   }
 
   function renderBoard() {
-    const chip = (t) => `<div class="b-chip"><span class="b-shop">${esc(t.shopEmoji)}</span><span class="b-num">${esc(t.number)}</span><span class="b-name">${esc(t.name || "")}</span></div>`;
+    const chip = (t) => `<div class="b-chip"><span class="b-shop">${esc(t.shopEmoji)}</span><span class="b-num">${esc(t.number)}</span><span class="b-name">${esc(t.name || "")}${t.unpaid ? " 💵" : ""}</span></div>`;
     const preparing = sorted("new").concat(sorted("making"));
     const ready = sorted("ready");
     $("board-preparing").innerHTML = preparing.map(chip).join("") || `<div class="b-empty">—</div>`;
@@ -285,5 +303,5 @@ window.Kitchen = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 
-  return { add, advance, markReady, all, merge, onChange, onBell, rang, toast, open, close, nextNumber };
+  return { add, advance, markReady, markPaid, unpaid, all, merge, onChange, onBell, rang, toast, open, close, nextNumber };
 })();

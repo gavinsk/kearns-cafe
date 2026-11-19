@@ -444,7 +444,7 @@ window.Intercom = (function () {
     else {
       $("callbar").classList.remove("hidden");
       renderMute();
-      if (window.Register && window.Register.setType) window.Register.setType("To Go");   // phone orders are pickups
+      if (window.Register && window.Register.setType) window.Register.setType("Phone");   // phone orders pay at pickup
     }
   }
 

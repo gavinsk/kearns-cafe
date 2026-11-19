@@ -242,11 +242,13 @@
         <button data-type="For Here">For Here</button>
         <button data-type="To Go">To Go</button>
         <button data-type="Drive-Thru">Drive-Thru</button>
+        <button data-type="Phone">📞 Phone</button>
       </div>
       <div class="topbar-right">
         <div id="order-number" class="order-number"></div>
         <div id="clock" class="clock"></div>
       </div>
+      <button id="btn-pickups" class="topbar-home pickups-btn hidden" aria-label="Orders waiting to pay at pickup">🛍️<span id="pickups-count" class="pickups-count">0</span></button>
       <button id="btn-surprise" class="topbar-home" aria-label="Surprise customer">🎲</button>
       <button id="link-dot" class="topbar-home link-dot" aria-label="iPad link status">⚪</button>
       <button id="btn-mute" class="topbar-home" aria-label="Sound on or off">🔊</button>
@@ -325,9 +327,23 @@
       <input id="co-name" class="name-input" type="text" placeholder="Type a name" autocomplete="off" autocapitalize="words">
       <div id="co-quick" class="quick-names"></div>
       <div class="co-total">Total: <strong id="co-total"></strong></div>
+      <div id="co-later-note" class="co-later-note hidden">📞 Phone order: the customer isn't here to pay yet.</div>
       <div class="sheet-foot">
         <button id="co-cancel" class="btn-secondary">Back</button>
         <button id="co-pay" class="btn-primary">Turn to Customer →</button>
+        <button id="co-later" class="btn-primary hidden">🛍️ Pay at Pickup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PICKUPS: orders that still need to pay ============ -->
+  <div id="pickups-modal" class="modal hidden">
+    <div class="sheet sheet-narrow">
+      <div class="sheet-title center">🛍️ Pay at Pickup</div>
+      <div class="sheet-sub center">Phone orders waiting to pay. Tap <b>Pay</b> when the customer comes to pick up.</div>
+      <div id="pickups-list" class="pickups-list"></div>
+      <div class="sheet-foot">
+        <button id="pickups-close" class="btn-primary">Done</button>
       </div>
     </div>
   </div>
