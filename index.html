@@ -238,12 +238,6 @@
         <span id="shop-emoji" class="brand-emoji"></span>
         <span id="shop-name" class="brand-name"></span>
       </div>
-      <div id="order-type" class="segmented">
-        <button data-type="For Here">For Here</button>
-        <button data-type="To Go">To Go</button>
-        <button data-type="Drive-Thru">Drive-Thru</button>
-        <button data-type="Phone">📞 Phone</button>
-      </div>
       <div class="topbar-right">
         <div id="order-number" class="order-number"></div>
         <div id="clock" class="clock"></div>
@@ -274,11 +268,14 @@
 
       <aside class="ticket">
         <div class="ticket-head">
-          <div>
-            <div class="ticket-title">Current Order</div>
-            <div id="ticket-customer" class="ticket-customer"></div>
-          </div>
+          <div class="ticket-title">Current Order</div>
           <button id="btn-clear" class="btn-small">Clear</button>
+        </div>
+        <div id="order-type" class="order-type">
+          <button data-type="For Here"><span>🍽️</span>For Here</button>
+          <button data-type="To Go"><span>🥡</span>To Go</button>
+          <button data-type="Drive-Thru"><span>🚗</span>Drive-Thru</button>
+          <button data-type="Phone"><span>📞</span>Phone</button>
         </div>
         <ul id="lines" class="lines"></ul>
         <div id="empty" class="empty">Tap a menu item<br>to start an order</div>

@@ -349,14 +349,12 @@ button:disabled { opacity: 0.4; transform: none; }
 /* ---------- Narrower screens (iPad portrait, phones) ---------- */
 @media (max-width: 900px) {
   .ticket { width: 320px; }
-  .segmented button { padding: 8px 10px; font-size: 15px; }
   .brand-name { font-size: 20px; }
   .items { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); grid-auto-rows: 135px; }
 }
 @media (max-width: 700px) {
   .register-body { flex-direction: column; }
   .ticket { width: 100%; height: 45%; border-left: none; border-top: 1px solid var(--line); }
-  .segmented { display: none; }
   .picker-title { font-size: 44px; }
   .shop-btn { width: 260px; padding: 24px 16px; }
   .shop-btn .big { font-size: 80px; }
@@ -1516,3 +1514,36 @@ button:disabled { opacity: 0.4; transform: none; }
 .pickup-total { font-size: 20px; font-weight: 800; }
 .pickup-pay { padding: 10px 16px; font-size: 18px; }
 .tk-unpaid { display: inline-block; margin: 4px 0 2px; padding: 3px 10px; border-radius: 999px; background: #fff4d6; color: #8a5a00; font-weight: 800; font-size: 14px; }
+
+/* ============ ORDER TYPE (in the Current Order panel) ============ */
+.order-type {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+  margin: 0 16px 10px; padding: 4px;
+  background: #f1ebe3; border-radius: 14px;
+}
+.order-type button {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 6px 2px; border-radius: 10px;
+  font-size: 13px; font-weight: 800; color: #6b5d50; white-space: nowrap;
+}
+.order-type button span { font-size: 22px; line-height: 1.1; }
+.order-type button.on { background: var(--primary); color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+@media (max-width: 700px) {
+  .order-type { margin: 0 10px 6px; }
+  .order-type button { flex-direction: row; justify-content: center; gap: 4px; padding: 6px 2px; }
+  .order-type button span { font-size: 17px; }
+}
+.ticket-head { border-bottom: none; padding-bottom: 8px; }
+.order-type { margin-bottom: 0; }
+.ticket .order-type ~ .lines, .ticket .order-type ~ .empty { border-top: 1px solid var(--line); margin-top: 10px; }
+@media (max-width: 700px) {
+  .ticket-head { padding: 8px 12px 6px; }
+  .ticket-title { font-size: 18px; }
+  .ticket-head .btn-small { padding: 6px 12px; }
+  .order-type { padding: 3px; }
+  .order-type button { font-size: 12px; padding: 4px 1px; }
+  .order-type button span { font-size: 15px; }
+  .ticket .order-type ~ .lines, .ticket .order-type ~ .empty { margin-top: 6px; }
+}
+.voice-uri { display: block; font-size: 11px; font-weight: 500; color: var(--muted); word-break: break-all; }
+.voice-details-btn { display: block; margin: 10px auto 2px; font-size: 14px; color: var(--muted); background: none; text-decoration: underline; }

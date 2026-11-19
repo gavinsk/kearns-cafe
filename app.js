@@ -315,7 +315,6 @@
     $("btn-charge").disabled = order.lines.length === 0;
     $("empty").classList.toggle("hidden", order.lines.length > 0);
     $("lines").classList.toggle("hidden", order.lines.length === 0);
-    $("ticket-customer").textContent = order.type;
   }
 
   function changeQty(idx, delta) {

@@ -20,6 +20,7 @@ window.Voice = (function () {
   let voices = [];
   let chosenURI = null;
   let mixVoices = true;
+  let showDetails = false;   // parent view: what Safari actually reports for each voice
   try {
     chosenURI = localStorage.getItem("kearns.voice");
     mixVoices = localStorage.getItem("kearns.voiceMix") !== "0";
@@ -109,8 +110,9 @@ window.Voice = (function () {
     voices.forEach((v) => {
       const row = document.createElement("div");
       row.className = "voice-row" + (current && v.voiceURI === current.voiceURI ? " on" : "");
+      const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
       row.innerHTML = `
-        <span class="voice-name">${shortName(v)}</span>
+        <span class="voice-name">${esc(shortName(v))}${showDetails ? `<small class="voice-uri">${esc(v.name)} · ${esc(v.voiceURI)}${v.localService ? "" : " · online"}</small>` : ""}</span>
         <span class="voice-badge q${quality(v)}">${BADGE[quality(v)]}</span>
         <span class="voice-lang">${v.lang}</span>`;
       const test = document.createElement("button");
@@ -131,6 +133,14 @@ window.Voice = (function () {
       };
       list.appendChild(row);
     });
+    const more = document.createElement("button");
+    more.className = "voice-details-btn";
+    const total = synth ? synth.getVoices().length : 0;
+    more.textContent = showDetails
+      ? `🔍 Hide details · Safari shared ${total} voices (${voices.length} English shown)`
+      : "🔍 Show voice details";
+    more.onclick = () => { showDetails = !showDetails; renderPicker(); };
+    list.appendChild(more);
     $("voice-tip").classList.toggle("hidden", best() >= 2);
     $("voice-mix").classList.toggle("on", mixVoices);
     $("voice-mix").textContent = mixVoices ? "🎭 Different voice for each customer: ON" : "🎭 Different voice for each customer: OFF";
